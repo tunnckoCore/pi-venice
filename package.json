@@ -1,6 +1,6 @@
 {
   "name": "pi-venice",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Pi Coding Agent extension for using Venice.ai as provider",
   "license": "Apache-2.0",
   "type": "module",

@@ -60,12 +60,14 @@ The extension can track broader Venice catalog families such as:
 
 ## Authentication
 
-The extension looks for a Venice API key in either:
+The extension currently supports **API key authentication**.
+
+It looks for a Venice API key in either:
 
 - `VENICE_API_KEY`
 - `~/.pi/agent/auth.json`
 
-Example `auth.json`:
+Example `auth.json` using an environment variable name:
 
 ```json
 {
@@ -75,6 +77,19 @@ Example `auth.json`:
   }
 }
 ```
+
+Example `auth.json` using a literal API key:
+
+```json
+{
+  "venice": {
+    "type": "api_key",
+    "key": "vnc_live_abc123"
+  }
+}
+```
+
+OAuth is **not implemented** in this extension today. If Venice exposes a stable OAuth flow in the future, it could be added through Pi's custom-provider OAuth hooks and `/login`, but that is not wired up yet.
 
 ## Make Venice your default provider
 
