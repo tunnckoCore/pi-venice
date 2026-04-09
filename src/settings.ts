@@ -134,6 +134,11 @@ export function loadPiVeniceSettings(cwd: string): PiVeniceSettings {
   return deepMerge(globalScoped, projectScoped);
 }
 
+/** Apply global settings without requiring a project cwd. */
+export function applySettingsToGlobalState(state: VeniceState): VeniceState {
+  return applySettingsToState(state, homedir());
+}
+
 export function applySettingsToState(state: VeniceState, cwd: string): VeniceState {
   const merged = loadPiVeniceSettings(cwd);
   const next: VeniceState = {
