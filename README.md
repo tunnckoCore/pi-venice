@@ -1,6 +1,6 @@
 # pi-venice
 
-> Venice.AI for Pi Coding Agent.
+> [Venice.AI](https://venice.ai) extension for [Pi Coding Agent](https://pi.dev).
 
 A Pi extension that adds:
 
@@ -13,6 +13,14 @@ A Pi extension that adds:
 ```bash
 export VENICE_API_KEY="your-venice-api-key"
 pi -e npm:pi-venice
+
+# or from Github
+
+pi -e https://github.com/tunnckoCore/pi-venice
+
+# or direct install
+
+pi install npm:pi-venice
 ```
 
 ## What it supports
