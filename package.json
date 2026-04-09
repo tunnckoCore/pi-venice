@@ -1,17 +1,17 @@
 {
   "name": "pi-venice",
-  "version": "0.1.0",
-  "description": "Venice.AI extension for Pi Coding Agent.",
+  "version": "0.1.1",
+  "description": "Venice.AI extension for Pi Coding Agent",
   "license": "Apache-2.0",
   "type": "module",
   "module": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts"
   },
-  "homepage": "https://github.com/tunnckoCore/pi-venice-extension",
+  "homepage": "https://github.com/tunnckoCore/pi-venice",
   "repository": {
     "type": "git",
-    "url": "https://github.com/tunnckoCore/pi-venice-extension.git"
+    "url": "https://github.com/tunnckoCore/pi-venice.git"
   },
   "files": [
     "src",
