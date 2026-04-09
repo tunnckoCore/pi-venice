@@ -1,6 +1,6 @@
 # pi-venice
 
-> [Venice.AI](https://venice.ai) extension for [Pi Coding Agent](https://pi.dev).
+>  [Pi Coding Agent](https://pi.dev) extension for using Venice.AI as provider. All text, image, edit, video models and tools with support for S3 output storage.
 
 A Pi extension that adds:
 
