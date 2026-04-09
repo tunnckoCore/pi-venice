@@ -1,0 +1,8 @@
+# pi-cron.tab — Managed by pi-cron extension
+# Format: <min> <hour> <dom> <month> <dow>  <name>  [channel:<ch>]  [disabled]  <prompt>
+#
+# Examples:
+#   0 9 * * 1-5  daily-standup  Review my td tasks and summarize what's open
+#   */15 * * * *  health-check  channel:ops  Check system health
+#   0 0 * * 0  weekly-digest  disabled  Summarize the week
+

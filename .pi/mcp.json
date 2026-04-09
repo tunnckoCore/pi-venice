@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "mempalace": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "/home/arcka/tryingmempalace/mempalace",
+        "-m",
+        "mempalace.mcp_server"
+      ]
+    }
+  }
+}

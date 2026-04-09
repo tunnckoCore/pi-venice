@@ -1,0 +1,11 @@
+node_modules
+build
+dist
+target
+.cache
+.next
+.pi/agent-sessions
+.pi/venice-output
+*.tsbuildinfo
+.env*
+!.env.example
