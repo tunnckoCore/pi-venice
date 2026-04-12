@@ -83,13 +83,11 @@ export function createVeniceRuntime(pi: ExtensionAPI): VeniceRuntime {
           state = { ...state, models: cached };
         }
       }
-      if (state.models.length === 0) {
-        // No cache available yet — register with an empty list.
-        // Models will appear after session_start refreshes the catalog.
-      }
       const settings = applySettingsToGlobalState(state);
       state = settings;
-      runtime.registerProvider();
+      if (state.models.length > 0) {
+        runtime.registerProvider();
+      }
     },
     registerProvider: () => {
       pi.registerProvider(VENICE_PROVIDER, {
