@@ -39,6 +39,11 @@ interface PiVeniceSettings {
   };
 }
 
+function piConfigDir(): string {
+  const xdg = process.env.XDG_CONFIG_HOME;
+  return join(xdg && xdg.length > 0 ? xdg : homedir(), ".pi");
+}
+
 function readJsonIfExists(path: string): any {
   if (!existsSync(path)) return {};
   try {
@@ -119,12 +124,13 @@ function normalizeScopedSettings(
 }
 
 export function loadPiVeniceSettings(cwd: string): PiVeniceSettings {
-  const globalPath = join(homedir(), ".pi", "agent", "settings.json");
+  const globalAgentDir = join(piConfigDir(), "agent");
+  const globalPath = join(globalAgentDir, "settings.json");
   const projectPath = resolve(cwd, ".pi", "settings.json");
 
   const globalScoped = normalizeScopedSettings(
     (readJsonIfExists(globalPath)?.["pi-venice"] ?? {}) as PiVeniceSettings,
-    join(homedir(), ".pi", "agent"),
+    globalAgentDir,
   );
   const projectScoped = normalizeScopedSettings(
     (readJsonIfExists(projectPath)?.["pi-venice"] ?? {}) as PiVeniceSettings,
@@ -135,10 +141,10 @@ export function loadPiVeniceSettings(cwd: string): PiVeniceSettings {
 }
 
 function loadGlobalOnlySettings(): PiVeniceSettings {
-  const globalPath = join(homedir(), ".pi", "agent", "settings.json");
+  const globalAgentDir = join(piConfigDir(), "agent");
   return normalizeScopedSettings(
-    (readJsonIfExists(globalPath)?.["pi-venice"] ?? {}) as PiVeniceSettings,
-    join(homedir(), ".pi", "agent"),
+    (readJsonIfExists(join(globalAgentDir, "settings.json"))?.["pi-venice"] ?? {}) as PiVeniceSettings,
+    globalAgentDir,
   );
 }
 

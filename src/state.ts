@@ -16,7 +16,13 @@ import {
 } from "./helpers.ts";
 import type { DefaultableFamily, VeniceModelInfo, VeniceState } from "./types.ts";
 
-const MODEL_CACHE_PATH = join(homedir(), ".pi", "agent", "venice-model-cache.json");
+const XDG = process.env.XDG_CONFIG_HOME;
+const MODEL_CACHE_PATH = join(
+  XDG && XDG.length > 0 ? XDG : homedir(),
+  ".pi",
+  "agent",
+  "venice-model-cache.json",
+);
 
 export function defaultState(): VeniceState {
   return {
