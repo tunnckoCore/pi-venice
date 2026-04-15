@@ -1,15 +1,15 @@
 import { existsSync, readFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 import { VENICE_PROVIDER } from "./constants.ts";
-import type { VeniceState } from "./types.ts";
 import { truncate } from "./helpers.ts";
+import { piConfigDir } from "./settings.ts";
+import type { VeniceState } from "./types.ts";
 
 export function resolveVeniceApiKey(apiKeyEnv: string): string | undefined {
   if (process.env[apiKeyEnv]) return process.env[apiKeyEnv];
 
-  const authPath = join(homedir(), ".pi", "agent", "auth.json");
+  const authPath = join(piConfigDir(), "agent", "auth.json");
   if (!existsSync(authPath)) return undefined;
 
   try {
@@ -55,7 +55,7 @@ export async function veniceFetch(
     const apiKey = resolveVeniceApiKey(state.config.apiKeyEnv);
     if (!apiKey) {
       throw new Error(
-        `Missing Venice API key. Set ${state.config.apiKeyEnv} or configure ~/.pi/agent/auth.json for provider \"venice\".`,
+        `Missing Venice API key. Set ${state.config.apiKeyEnv} or configure ${join(piConfigDir(), "agent", "auth.json")} for provider \"venice\".`,
       );
     }
     headers.set("Authorization", `Bearer ${apiKey}`);

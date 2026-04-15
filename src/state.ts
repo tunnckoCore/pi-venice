@@ -1,6 +1,5 @@
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 
 import {
@@ -14,12 +13,11 @@ import {
   isDefaultableFamily,
   isUserConfigurableFamily,
 } from "./helpers.ts";
+import { piConfigDir } from "./settings.ts";
 import type { DefaultableFamily, VeniceModelInfo, VeniceState } from "./types.ts";
 
-const XDG = process.env.XDG_CONFIG_HOME;
 const MODEL_CACHE_PATH = join(
-  XDG && XDG.length > 0 ? XDG : homedir(),
-  ".pi",
+  piConfigDir(),
   "agent",
   "venice-model-cache.json",
 );

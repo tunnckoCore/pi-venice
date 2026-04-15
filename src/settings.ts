@@ -39,7 +39,7 @@ interface PiVeniceSettings {
   };
 }
 
-function piConfigDir(): string {
+export function piConfigDir(): string {
   const xdg = process.env.XDG_CONFIG_HOME;
   return join(xdg && xdg.length > 0 ? xdg : homedir(), ".pi");
 }
@@ -149,7 +149,7 @@ function loadGlobalOnlySettings(): PiVeniceSettings {
 }
 
 /** Apply global settings without requiring a project cwd.
- * Reads only ~/.pi/agent/settings.json — does NOT consult project overrides. */
+ * Reads only <piConfigDir()>/agent/settings.json — does NOT consult project overrides. */
 export function applySettingsToGlobalState(state: VeniceState): VeniceState {
   const merged = loadGlobalOnlySettings();
   const next: VeniceState = {
