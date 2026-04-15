@@ -455,8 +455,8 @@ export function updateStatus(ctx: ExtensionContext, state: VeniceState) {
   const notActionable = getEnabledButNotActionableFamilies(state).length;
 
   ctx.ui.setStatus(
-    `Venice ${statusLabel} · ${textCount} text · ${state.models.length} total · ${activeJobs} jobs${notActionable ? ` · ${notActionable} future` : ""}`,
     "venice",
+    `Venice ${statusLabel} · ${textCount} text · ${state.models.length} total · ${activeJobs} jobs${notActionable ? ` · ${notActionable} future` : ""}`,
   );
 }
 

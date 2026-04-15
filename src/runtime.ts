@@ -6,8 +6,8 @@ import type {
 import { refreshVeniceCatalog } from "./catalog.ts";
 import { toProviderModels, updateStatus } from "./helpers.ts";
 import { VENICE_PROVIDER } from "./constants.ts";
-import { applySettingsToState } from "./settings.ts";
-import { defaultState, latestStateFromEntries, persistState } from "./state.ts";
+import { applySettingsToState, applySettingsToGlobalState } from "./settings.ts";
+import { defaultState, latestStateFromEntries, persistState, loadModelCache } from "./state.ts";
 import type { VeniceState } from "./types.ts";
 import {
   completeVideoJob,
@@ -21,6 +21,10 @@ export interface VeniceRuntime {
   saveState(): void;
   restoreState(ctx: ExtensionContext): void;
   registerProvider(): void;
+  /** Register provider eagerly during extension load using cached models.
+   * This ensures Venice models are in the registry before pi resolves its
+   * initial model scope, avoiding the "No models match pattern" warning. */
+  eagerRegisterProvider(): void;
   updateStatus(ctx: ExtensionContext): void;
   refreshModels(ctx?: ExtensionContext, silent?: boolean): Promise<number>;
   queueVideo(
@@ -58,9 +62,32 @@ export function createVeniceRuntime(pi: ExtensionAPI): VeniceRuntime {
     },
     restoreState: (ctx) => {
       state = latestStateFromEntries(ctx);
+      // If no models from session entries, try loading from persistent cache
+      // so we can register models synchronously before model resolution runs.
+      if (state.models.length === 0) {
+        const cached = loadModelCache();
+        if (cached && cached.length > 0) {
+          state = { ...state, models: cached };
+        }
+      }
       state = applySettingsToState(state, ctx.cwd);
       runtime.registerProvider();
       runtime.updateStatus(ctx);
+    },
+    eagerRegisterProvider: () => {
+      // Load models from persistent cache so the provider is registered
+      // with known models BEFORE pi resolves its initial model scope.
+      if (state.models.length === 0) {
+        const cached = loadModelCache();
+        if (cached && cached.length > 0) {
+          state = { ...state, models: cached };
+        }
+      }
+      const settings = applySettingsToGlobalState(state);
+      state = settings;
+      if (state.models.length > 0) {
+        runtime.registerProvider();
+      }
     },
     registerProvider: () => {
       pi.registerProvider(VENICE_PROVIDER, {
