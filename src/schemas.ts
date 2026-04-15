@@ -44,7 +44,9 @@ export const ImageEditParams = Type.Object({
       "Image input as a local file path, http(s) URL, data URL, or raw base64.",
   }),
   prompt: Type.String({ description: "Image edit instruction." }),
-  model: Type.Optional(Type.String({ description: "Venice image edit model id." })),
+  model: Type.Optional(
+    Type.String({ description: "Venice image edit model id." }),
+  ),
   aspect_ratio: Type.Optional(AspectRatioSchema),
   save_dir: Type.Optional(Type.String()),
 });
@@ -57,7 +59,9 @@ export const ImageMultiEditParams = Type.Object({
       "1 to 3 image inputs as local file paths, http(s) URLs, data URLs, or raw base64 strings.",
   }),
   prompt: Type.String({ description: "Image multi-edit instruction." }),
-  model: Type.Optional(Type.String({ description: "Venice multi-edit model id." })),
+  model: Type.Optional(
+    Type.String({ description: "Venice multi-edit model id." }),
+  ),
   save_dir: Type.Optional(Type.String()),
 });
 
@@ -84,17 +88,30 @@ export const BackgroundRemoveParams = Type.Object({
 
 export const VideoGenerateParams = Type.Object({
   model: Type.Optional(Type.String({ description: "Venice video model id." })),
-  prompt: Type.Optional(Type.String({ description: "Prompt for video generation." })),
+  prompt: Type.Optional(
+    Type.String({ description: "Prompt for video generation." }),
+  ),
   negative_prompt: Type.Optional(Type.String()),
   duration: Type.Optional(VideoDurationSchema),
   aspect_ratio: Type.Optional(VideoAspectSchema),
   resolution: Type.Optional(VideoResolutionSchema),
   upscale_factor: Type.Optional(Type.Integer({ minimum: 1, maximum: 4 })),
   audio: Type.Optional(Type.Boolean()),
-  image: Type.Optional(Type.String({ description: "Optional image-to-video source." })),
-  end_image: Type.Optional(Type.String({ description: "Optional end-frame image source." })),
-  audio_input: Type.Optional(Type.String({ description: "Optional audio source for supported models." })),
-  video_input: Type.Optional(Type.String({ description: "Optional video source for video-to-video or upscale models." })),
+  image: Type.Optional(
+    Type.String({ description: "Optional image-to-video source." }),
+  ),
+  end_image: Type.Optional(
+    Type.String({ description: "Optional end-frame image source." }),
+  ),
+  audio_input: Type.Optional(
+    Type.String({ description: "Optional audio source for supported models." }),
+  ),
+  video_input: Type.Optional(
+    Type.String({
+      description:
+        "Optional video source for video-to-video or upscale models.",
+    }),
+  ),
   reference_images: Type.Optional(
     Type.Array(Type.String(), {
       maxItems: 9,
@@ -103,7 +120,9 @@ export const VideoGenerateParams = Type.Object({
   ),
   quote_only: Type.Optional(Type.Boolean()),
   wait: Type.Optional(Type.Boolean()),
-  poll_interval_seconds: Type.Optional(Type.Integer({ minimum: 1, maximum: 60 })),
+  poll_interval_seconds: Type.Optional(
+    Type.Integer({ minimum: 1, maximum: 60 }),
+  ),
   timeout_seconds: Type.Optional(Type.Integer({ minimum: 5, maximum: 1800 })),
   cleanup: Type.Optional(Type.Boolean()),
   save_dir: Type.Optional(Type.String()),
@@ -113,7 +132,9 @@ export const VideoRetrieveParams = Type.Object({
   model: Type.String({ description: "Venice video model id." }),
   queue_id: Type.String({ description: "Venice video queue id." }),
   wait: Type.Optional(Type.Boolean()),
-  poll_interval_seconds: Type.Optional(Type.Integer({ minimum: 1, maximum: 60 })),
+  poll_interval_seconds: Type.Optional(
+    Type.Integer({ minimum: 1, maximum: 60 }),
+  ),
   timeout_seconds: Type.Optional(Type.Integer({ minimum: 5, maximum: 1800 })),
   cleanup: Type.Optional(Type.Boolean()),
   save_dir: Type.Optional(Type.String()),

@@ -3,7 +3,9 @@ import { VENICE_MODELS_ENDPOINT } from "./constants.ts";
 import { normalizeModel } from "./helpers.ts";
 import type { VeniceState } from "./types.ts";
 
-export async function refreshVeniceCatalog(state: VeniceState): Promise<VeniceState> {
+export async function refreshVeniceCatalog(
+  state: VeniceState,
+): Promise<VeniceState> {
   const response = await veniceFetch(
     state,
     VENICE_MODELS_ENDPOINT,

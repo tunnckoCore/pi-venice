@@ -6,8 +6,16 @@ import type {
 import { refreshVeniceCatalog } from "./catalog.ts";
 import { toProviderModels, updateStatus } from "./helpers.ts";
 import { VENICE_PROVIDER } from "./constants.ts";
-import { applySettingsToState, applySettingsToGlobalState } from "./settings.ts";
-import { defaultState, latestStateFromEntries, persistState, loadModelCache } from "./state.ts";
+import {
+  applySettingsToState,
+  applySettingsToGlobalState,
+} from "./settings.ts";
+import {
+  defaultState,
+  latestStateFromEntries,
+  persistState,
+  loadModelCache,
+} from "./state.ts";
 import type { VeniceState } from "./types.ts";
 import {
   completeVideoJob,
@@ -46,7 +54,11 @@ export interface VeniceRuntime {
     signal?: AbortSignal,
     onUpdate?: (result: any) => void,
   ): Promise<{ status: string; summary: string; savedFiles?: any[] }>;
-  completeVideo(model: string, queueId: string, signal?: AbortSignal): Promise<void>;
+  completeVideo(
+    model: string,
+    queueId: string,
+    signal?: AbortSignal,
+  ): Promise<void>;
 }
 
 export function createVeniceRuntime(pi: ExtensionAPI): VeniceRuntime {

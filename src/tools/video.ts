@@ -3,7 +3,13 @@ import { Text } from "@mariozechner/pi-tui";
 
 import { veniceJson } from "../api.ts";
 import { resolveAsset } from "../assets.ts";
-import { ensureToolFamilyEnabled, makeJobKey, pickDefaultModel, renderToolSummary, truncate } from "../helpers.ts";
+import {
+  ensureToolFamilyEnabled,
+  makeJobKey,
+  pickDefaultModel,
+  renderToolSummary,
+  truncate,
+} from "../helpers.ts";
 import {
   VideoCompleteParams,
   VideoGenerateParams,
@@ -16,7 +22,10 @@ function toolFamilyError(runtime: VeniceRuntime, family: "video") {
   return ensureToolFamilyEnabled(runtime.getState(), family);
 }
 
-export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntime) {
+export function registerVeniceVideoTools(
+  pi: ExtensionAPI,
+  runtime: VeniceRuntime,
+) {
   pi.registerTool({
     name: "venice_video_generate",
     label: "Venice Video Generate",
@@ -28,29 +37,49 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
       if (disabled) {
         return {
           content: [{ type: "text", text: disabled }],
-          details: { status: "error", error: disabled, summary: disabled } satisfies VeniceToolDetails,
+          details: {
+            status: "error",
+            error: disabled,
+            summary: disabled,
+          } satisfies VeniceToolDetails,
           isError: true,
         };
       }
 
       try {
         if (params.quote_only) {
-          const model = params.model ?? pickDefaultModel(runtime.getState(), "video");
+          const model =
+            params.model ?? pickDefaultModel(runtime.getState(), "video");
           if (!model) throw new Error("No Venice video model available.");
           const quotePayload: Record<string, any> = { model };
           if (params.duration) quotePayload.duration = params.duration;
-          if (params.aspect_ratio) quotePayload.aspect_ratio = params.aspect_ratio;
+          if (params.aspect_ratio)
+            quotePayload.aspect_ratio = params.aspect_ratio;
           if (params.resolution) quotePayload.resolution = params.resolution;
-          if (params.upscale_factor) quotePayload.upscale_factor = params.upscale_factor;
-          if (typeof params.audio === "boolean") quotePayload.audio = params.audio;
+          if (params.upscale_factor)
+            quotePayload.upscale_factor = params.upscale_factor;
+          if (typeof params.audio === "boolean")
+            quotePayload.audio = params.audio;
           if (params.video_input) {
-            const video = await resolveAsset(params.video_input, "video", signal);
+            const video = await resolveAsset(
+              params.video_input,
+              "video",
+              signal,
+            );
             quotePayload.video_url = video.httpUrl ?? video.dataUrl;
           }
-          const quote = await veniceJson(runtime.getState(), "/video/quote", quotePayload, signal, true);
+          const quote = await veniceJson(
+            runtime.getState(),
+            "/video/quote",
+            quotePayload,
+            signal,
+            true,
+          );
           const amount = Number(quote?.quote ?? 0);
           return {
-            content: [{ type: "text", text: `Video quote for ${model}: $${amount}` }],
+            content: [
+              { type: "text", text: `Video quote for ${model}: $${amount}` },
+            ],
             details: {
               status: "done",
               model,
@@ -63,7 +92,11 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
 
         onUpdate?.({
           content: [{ type: "text", text: "Queueing Venice video job..." }],
-          details: { status: "processing", family: "video", summary: "Queueing Venice video job" },
+          details: {
+            status: "processing",
+            family: "video",
+            summary: "Queueing Venice video job",
+          },
         });
 
         const queued = await runtime.queueVideo(ctx, params, signal);
@@ -83,7 +116,16 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
         );
 
         return {
-          content: [{ type: "text", text: polled.summary + (polled.savedFiles?.length ? `\n${polled.savedFiles.map((file: any) => file.path).join("\n")}` : "") }],
+          content: [
+            {
+              type: "text",
+              text:
+                polled.summary +
+                (polled.savedFiles?.length
+                  ? `\n${polled.savedFiles.map((file: any) => file.path).join("\n")}`
+                  : ""),
+            },
+          ],
           details: {
             status: polled.status,
             model: queued.model,
@@ -96,7 +138,12 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
         };
       } catch (error: any) {
         return {
-          content: [{ type: "text", text: `Video generation failed: ${error?.message ?? String(error)}` }],
+          content: [
+            {
+              type: "text",
+              text: `Video generation failed: ${error?.message ?? String(error)}`,
+            },
+          ],
           details: {
             status: "error",
             family: "video",
@@ -115,7 +162,13 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
       return new Text(text, 0, 0);
     },
     renderResult(result, options, theme) {
-      return renderToolSummary("video", result, options.expanded, options.isPartial, theme);
+      return renderToolSummary(
+        "video",
+        result,
+        options.expanded,
+        options.isPartial,
+        theme,
+      );
     },
   });
 
@@ -130,7 +183,11 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
       if (disabled) {
         return {
           content: [{ type: "text", text: disabled }],
-          details: { status: "error", error: disabled, summary: disabled } satisfies VeniceToolDetails,
+          details: {
+            status: "error",
+            error: disabled,
+            summary: disabled,
+          } satisfies VeniceToolDetails,
           isError: true,
         };
       }
@@ -152,7 +209,16 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
         );
 
         return {
-          content: [{ type: "text", text: polled.summary + (polled.savedFiles?.length ? `\n${polled.savedFiles.map((file: any) => file.path).join("\n")}` : "") }],
+          content: [
+            {
+              type: "text",
+              text:
+                polled.summary +
+                (polled.savedFiles?.length
+                  ? `\n${polled.savedFiles.map((file: any) => file.path).join("\n")}`
+                  : ""),
+            },
+          ],
           details: {
             status: polled.status,
             model: params.model,
@@ -165,7 +231,12 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
         };
       } catch (error: any) {
         return {
-          content: [{ type: "text", text: `Video retrieval failed: ${error?.message ?? String(error)}` }],
+          content: [
+            {
+              type: "text",
+              text: `Video retrieval failed: ${error?.message ?? String(error)}`,
+            },
+          ],
           details: {
             status: "error",
             model: params.model,
@@ -188,7 +259,13 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
       );
     },
     renderResult(result, options, theme) {
-      return renderToolSummary("video retrieve", result, options.expanded, options.isPartial, theme);
+      return renderToolSummary(
+        "video retrieve",
+        result,
+        options.expanded,
+        options.isPartial,
+        theme,
+      );
     },
   });
 
@@ -203,7 +280,11 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
       if (disabled) {
         return {
           content: [{ type: "text", text: disabled }],
-          details: { status: "error", error: disabled, summary: disabled } satisfies VeniceToolDetails,
+          details: {
+            status: "error",
+            error: disabled,
+            summary: disabled,
+          } satisfies VeniceToolDetails,
           isError: true,
         };
       }
@@ -220,7 +301,12 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
           runtime.updateStatus(ctx);
         }
         return {
-          content: [{ type: "text", text: `Completed Venice video cleanup for ${params.queue_id}` }],
+          content: [
+            {
+              type: "text",
+              text: `Completed Venice video cleanup for ${params.queue_id}`,
+            },
+          ],
           details: {
             status: "done",
             model: params.model,
@@ -231,7 +317,12 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
         };
       } catch (error: any) {
         return {
-          content: [{ type: "text", text: `Video cleanup failed: ${error?.message ?? String(error)}` }],
+          content: [
+            {
+              type: "text",
+              text: `Video cleanup failed: ${error?.message ?? String(error)}`,
+            },
+          ],
           details: {
             status: "error",
             model: params.model,
@@ -254,7 +345,13 @@ export function registerVeniceVideoTools(pi: ExtensionAPI, runtime: VeniceRuntim
       );
     },
     renderResult(result, options, theme) {
-      return renderToolSummary("video cleanup", result, options.expanded, options.isPartial, theme);
+      return renderToolSummary(
+        "video cleanup",
+        result,
+        options.expanded,
+        options.isPartial,
+        theme,
+      );
     },
   });
 }

@@ -19,13 +19,21 @@ import {
 import type { DefaultableFamily } from "./types.ts";
 import type { VeniceRuntime } from "./runtime.ts";
 
-export function registerVeniceCommands(pi: ExtensionAPI, runtime: VeniceRuntime) {
+export function registerVeniceCommands(
+  pi: ExtensionAPI,
+  runtime: VeniceRuntime,
+) {
   pi.registerCommand("venice-refresh-models", {
-    description: "Fetch Venice model catalog and re-register the Venice text provider",
+    description:
+      "Fetch Venice model catalog and re-register the Venice text provider",
     handler: async (_args, ctx) => {
       try {
         await runtime.refreshModels(ctx);
-        notify(ctx, `Venice models refreshed: ${runtime.getState().models.length} total`, "success");
+        notify(
+          ctx,
+          `Venice models refreshed: ${runtime.getState().models.length} total`,
+          "success",
+        );
       } catch (error: any) {
         runtime.setState({
           ...runtime.getState(),
@@ -37,13 +45,18 @@ export function registerVeniceCommands(pi: ExtensionAPI, runtime: VeniceRuntime)
         });
         runtime.saveState();
         runtime.updateStatus(ctx);
-        notify(ctx, `Venice refresh failed: ${runtime.getState().config.lastError}`, "error");
+        notify(
+          ctx,
+          `Venice refresh failed: ${runtime.getState().config.lastError}`,
+          "error",
+        );
       }
     },
   });
 
   pi.registerCommand("venice-status", {
-    description: "Show Venice provider status, defaults, model counts, and future families",
+    description:
+      "Show Venice provider status, defaults, model counts, and future families",
     handler: async (_args, ctx) => {
       notify(ctx, buildStatusSummary(runtime.getState()), "info");
       runtime.updateStatus(ctx);
@@ -59,7 +72,11 @@ export function registerVeniceCommands(pi: ExtensionAPI, runtime: VeniceRuntime)
           ? parts[0]
           : "all";
       const limit = parts[1] ? Number(parts[1]) || 40 : 40;
-      const listing = buildModelListing(runtime.getState().models, family, limit);
+      const listing = buildModelListing(
+        runtime.getState().models,
+        family,
+        limit,
+      );
       notify(ctx, listing.text, "info");
     },
   });
@@ -92,7 +109,9 @@ export function registerVeniceCommands(pi: ExtensionAPI, runtime: VeniceRuntime)
       if (modelId === "none") {
         delete state.config.defaults[family];
       } else if (
-        !state.models.some((model) => model.family === family && model.id === modelId)
+        !state.models.some(
+          (model) => model.family === family && model.id === modelId,
+        )
       ) {
         notify(ctx, `Unknown Venice ${family} model: ${modelId}`, "error");
         return;
@@ -100,7 +119,10 @@ export function registerVeniceCommands(pi: ExtensionAPI, runtime: VeniceRuntime)
         state.config.defaults[family] = modelId;
       }
 
-      runtime.setState({ ...state, config: { ...state.config, defaults: { ...state.config.defaults } } });
+      runtime.setState({
+        ...state,
+        config: { ...state.config, defaults: { ...state.config.defaults } },
+      });
       runtime.saveState();
       runtime.registerProvider();
       runtime.updateStatus(ctx);
@@ -138,8 +160,13 @@ export function registerVeniceCommands(pi: ExtensionAPI, runtime: VeniceRuntime)
         .filter(Boolean);
       const nextFamilies = parsed.includes("all")
         ? [...USER_CONFIGURABLE_FAMILIES]
-        : parsed.filter((item): item is Exclude<typeof USER_CONFIGURABLE_FAMILIES[number], never> =>
-            isUserConfigurableFamily(item),
+        : parsed.filter(
+            (
+              item,
+            ): item is Exclude<
+              (typeof USER_CONFIGURABLE_FAMILIES)[number],
+              never
+            > => isUserConfigurableFamily(item),
           );
 
       if (nextFamilies.length === 0) {

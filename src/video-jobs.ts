@@ -22,7 +22,9 @@ export async function queueVideoJob(
   const state = deps.getState();
   const model = params.model ?? pickDefaultModel(state, "video");
   if (!model) {
-    throw new Error("No Venice video model available. Run /venice-refresh-models first.");
+    throw new Error(
+      "No Venice video model available. Run /venice-refresh-models first.",
+    );
   }
 
   const payload: Record<string, any> = { model };
@@ -50,7 +52,10 @@ export async function queueVideoJob(
     const video = await resolveAsset(params.video_input, "video", signal);
     payload.video_url = video.httpUrl ?? video.dataUrl;
   }
-  if (Array.isArray(params.reference_images) && params.reference_images.length > 0) {
+  if (
+    Array.isArray(params.reference_images) &&
+    params.reference_images.length > 0
+  ) {
     payload.reference_image_urls = await Promise.all(
       params.reference_images.map(async (value: string) => {
         const image = await resolveAsset(value, "image", signal);
@@ -61,7 +66,8 @@ export async function queueVideoJob(
 
   const data = await veniceJson(state, "/video/queue", payload, signal, true);
   const queueId = String(data?.queue_id ?? "");
-  if (!queueId) throw new Error("Venice video queue did not return a queue_id.");
+  if (!queueId)
+    throw new Error("Venice video queue did not return a queue_id.");
 
   deps.setState({
     ...deps.getState(),
@@ -189,7 +195,8 @@ export async function pollForVideoJob(
           [makeJobKey(model, queueId)]: {
             queueId,
             model,
-            prompt: deps.getState().videoJobs[makeJobKey(model, queueId)]?.prompt,
+            prompt:
+              deps.getState().videoJobs[makeJobKey(model, queueId)]?.prompt,
             status: "done",
             savedPath: savedFile.path,
             updatedAt: Date.now(),
@@ -241,7 +248,9 @@ export async function pollForVideoJob(
     deps.updateStatus(ctx);
 
     onUpdate?.({
-      content: [{ type: "text", text: `Video job ${queueId} is still processing...` }],
+      content: [
+        { type: "text", text: `Video job ${queueId} is still processing...` },
+      ],
       details: {
         status: "processing",
         queueId,

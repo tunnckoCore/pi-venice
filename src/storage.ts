@@ -3,7 +3,10 @@ import { URL } from "node:url";
 
 import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
 
-import { saveBase64File as saveLocalBase64File, saveBufferFile as saveLocalBufferFile } from "./assets.ts";
+import {
+  saveBase64File as saveLocalBase64File,
+  saveBufferFile as saveLocalBufferFile,
+} from "./assets.ts";
 import { resolveSecretReference } from "./settings.ts";
 import type { SavedFile, VeniceS3FilesConfig, VeniceState } from "./types.ts";
 
@@ -18,7 +21,12 @@ function hmac(key: Buffer | string, data: string): Buffer {
 function encodeRfc3986(path: string): string {
   return path
     .split("/")
-    .map((segment) => encodeURIComponent(segment).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`))
+    .map((segment) =>
+      encodeURIComponent(segment).replace(
+        /[!'()*]/g,
+        (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+      ),
+    )
     .join("/");
 }
 
@@ -35,7 +43,11 @@ function normalizePrefix(prefix?: string): string {
   return prefix.replace(/^\/+|\/+$/g, "");
 }
 
-function s3ObjectKey(bucketName: string, fileName: string, prefix?: string): string {
+function s3ObjectKey(
+  bucketName: string,
+  fileName: string,
+  prefix?: string,
+): string {
   const parts = [normalizePrefix(prefix), bucketName, fileName].filter(Boolean);
   return parts.join("/");
 }
@@ -67,12 +79,22 @@ async function putObjectS3(
     throw new Error("Missing S3 endpoint or bucket in pi-venice settings.");
   }
 
-  const accessKeyId = resolveSecretReference(config.credentials?.accessKeyId) || process.env.AWS_ACCESS_KEY_ID || process.env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = resolveSecretReference(config.credentials?.secretAccessKey) || process.env.AWS_SECRET_ACCESS_KEY || process.env.R2_SECRET_ACCESS_KEY;
-  const sessionToken = resolveSecretReference(config.credentials?.sessionToken) || process.env.AWS_SESSION_TOKEN;
+  const accessKeyId =
+    resolveSecretReference(config.credentials?.accessKeyId) ||
+    process.env.AWS_ACCESS_KEY_ID ||
+    process.env.R2_ACCESS_KEY_ID;
+  const secretAccessKey =
+    resolveSecretReference(config.credentials?.secretAccessKey) ||
+    process.env.AWS_SECRET_ACCESS_KEY ||
+    process.env.R2_SECRET_ACCESS_KEY;
+  const sessionToken =
+    resolveSecretReference(config.credentials?.sessionToken) ||
+    process.env.AWS_SESSION_TOKEN;
 
   if (!accessKeyId || !secretAccessKey) {
-    throw new Error("Missing S3 credentials. Configure pi-venice.storage.files.s3.credentials or AWS/R2 env vars.");
+    throw new Error(
+      "Missing S3 credentials. Configure pi-venice.storage.files.s3.credentials or AWS/R2 env vars.",
+    );
   }
 
   const region = config.region || "auto";
@@ -86,7 +108,12 @@ async function putObjectS3(
     `x-amz-content-sha256:${payloadHash}`,
     `x-amz-date:${amzDate}`,
   ];
-  const signedHeaderNames = ["content-type", "host", "x-amz-content-sha256", "x-amz-date"];
+  const signedHeaderNames = [
+    "content-type",
+    "host",
+    "x-amz-content-sha256",
+    "x-amz-date",
+  ];
 
   if (sessionToken) {
     canonicalHeaders.push(`x-amz-security-token:${sessionToken}`);
@@ -115,7 +142,9 @@ async function putObjectS3(
   const kRegion = hmac(kDate, region);
   const kService = hmac(kRegion, service);
   const kSigning = hmac(kService, "aws4_request");
-  const signature = createHmac("sha256", kSigning).update(stringToSign).digest("hex");
+  const signature = createHmac("sha256", kSigning)
+    .update(stringToSign)
+    .digest("hex");
 
   const authorization = [
     `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}`,
@@ -138,7 +167,9 @@ async function putObjectS3(
   });
 
   if (!response.ok) {
-    throw new Error(`S3 upload failed (${response.status}): ${await response.text()}`);
+    throw new Error(
+      `S3 upload failed (${response.status}): ${await response.text()}`,
+    );
   }
 
   const publicBase = config.publicBaseUrl?.replace(/\/+$/, "");
@@ -169,7 +200,11 @@ export async function saveOutputBuffer(
             ? ".mp4"
             : ".bin";
     const fileName = `${fileNameBase}${extension}`;
-    const objectKey = s3ObjectKey(localBucketName(bucket), fileName, state.config.storage.files.s3?.prefix);
+    const objectKey = s3ObjectKey(
+      localBucketName(bucket),
+      fileName,
+      state.config.storage.files.s3?.prefix,
+    );
     const remoteUrl = await putObjectS3(
       state.config.storage.files.s3 || {},
       objectKey,
@@ -179,8 +214,18 @@ export async function saveOutputBuffer(
     return { path: remoteUrl, mimeType };
   }
 
-  const localDir = customDir || state.config.storage.files.local.baseDir || state.config.output.rootDir;
-  return saveLocalBufferFile(ctx, bucket, fileNameBase, data, mimeType, localDir);
+  const localDir =
+    customDir ||
+    state.config.storage.files.local.baseDir ||
+    state.config.output.rootDir;
+  return saveLocalBufferFile(
+    ctx,
+    bucket,
+    fileNameBase,
+    data,
+    mimeType,
+    localDir,
+  );
 }
 
 export async function saveOutputBase64(
@@ -204,6 +249,16 @@ export async function saveOutputBase64(
     );
   }
 
-  const localDir = customDir || state.config.storage.files.local.baseDir || state.config.output.rootDir;
-  return saveLocalBase64File(ctx, bucket, fileNameBase, base64, mimeType, localDir);
+  const localDir =
+    customDir ||
+    state.config.storage.files.local.baseDir ||
+    state.config.output.rootDir;
+  return saveLocalBase64File(
+    ctx,
+    bucket,
+    fileNameBase,
+    base64,
+    mimeType,
+    localDir,
+  );
 }

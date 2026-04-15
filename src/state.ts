@@ -1,4 +1,7 @@
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+} from "@mariozechner/pi-coding-agent";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -14,12 +17,13 @@ import {
   isUserConfigurableFamily,
 } from "./helpers.ts";
 import { piAgentDir } from "./settings.ts";
-import type { DefaultableFamily, VeniceModelInfo, VeniceState } from "./types.ts";
+import type {
+  DefaultableFamily,
+  VeniceModelInfo,
+  VeniceState,
+} from "./types.ts";
 
-const MODEL_CACHE_PATH = join(
-  piAgentDir(),
-  "venice-model-cache.json",
-);
+const MODEL_CACHE_PATH = join(piAgentDir(), "venice-model-cache.json");
 
 export function defaultState(): VeniceState {
   return {
@@ -57,7 +61,11 @@ export function persistState(pi: ExtensionAPI, state: VeniceState) {
 
 export function persistModelCache(state: VeniceState) {
   try {
-    writeFileSync(MODEL_CACHE_PATH, JSON.stringify({ models: state.models }), "utf-8");
+    writeFileSync(
+      MODEL_CACHE_PATH,
+      JSON.stringify({ models: state.models }),
+      "utf-8",
+    );
   } catch {
     // Silently ignore write failures - this is a best-effort cache
   }
@@ -99,7 +107,10 @@ export function latestStateFromEntries(ctx: ExtensionContext): VeniceState {
 
   const defaults: Partial<Record<DefaultableFamily, string>> = {};
   for (const family of DEFAULTABLE_FAMILIES) {
-    if (typeof config.defaults?.[family] === "string" && isDefaultableFamily(family)) {
+    if (
+      typeof config.defaults?.[family] === "string" &&
+      isDefaultableFamily(family)
+    ) {
       defaults[family] = config.defaults[family];
     }
   }
@@ -108,7 +119,9 @@ export function latestStateFromEntries(ctx: ExtensionContext): VeniceState {
     baseUrl:
       typeof config.baseUrl === "string" ? config.baseUrl : next.config.baseUrl,
     apiKeyEnv:
-      typeof config.apiKeyEnv === "string" ? config.apiKeyEnv : next.config.apiKeyEnv,
+      typeof config.apiKeyEnv === "string"
+        ? config.apiKeyEnv
+        : next.config.apiKeyEnv,
     enabledCatalogFamilies:
       enabledCatalogFamilies.length > 0
         ? enabledCatalogFamilies
@@ -133,7 +146,8 @@ export function latestStateFromEntries(ctx: ExtensionContext): VeniceState {
               : next.config.storage.files.local.baseDir,
         },
         s3:
-          config.storage?.files?.s3 && typeof config.storage.files.s3 === "object"
+          config.storage?.files?.s3 &&
+          typeof config.storage.files.s3 === "object"
             ? {
                 endpoint:
                   typeof config.storage.files.s3.endpoint === "string"
@@ -161,15 +175,18 @@ export function latestStateFromEntries(ctx: ExtensionContext): VeniceState {
                     : undefined,
                 credentials: {
                   accessKeyId:
-                    typeof config.storage.files.s3.credentials?.accessKeyId === "string"
+                    typeof config.storage.files.s3.credentials?.accessKeyId ===
+                    "string"
                       ? config.storage.files.s3.credentials.accessKeyId
                       : undefined,
                   secretAccessKey:
-                    typeof config.storage.files.s3.credentials?.secretAccessKey === "string"
+                    typeof config.storage.files.s3.credentials
+                      ?.secretAccessKey === "string"
                       ? config.storage.files.s3.credentials.secretAccessKey
                       : undefined,
                   sessionToken:
-                    typeof config.storage.files.s3.credentials?.sessionToken === "string"
+                    typeof config.storage.files.s3.credentials?.sessionToken ===
+                    "string"
                       ? config.storage.files.s3.credentials.sessionToken
                       : undefined,
                 },
@@ -178,7 +195,9 @@ export function latestStateFromEntries(ctx: ExtensionContext): VeniceState {
       },
     },
     lastRefreshAt:
-      typeof config.lastRefreshAt === "number" ? config.lastRefreshAt : undefined,
+      typeof config.lastRefreshAt === "number"
+        ? config.lastRefreshAt
+        : undefined,
     lastRefreshStatus:
       config.lastRefreshStatus === "ok" ||
       config.lastRefreshStatus === "error" ||

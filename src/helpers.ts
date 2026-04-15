@@ -81,7 +81,9 @@ export function isCatalogFamily(value: string): value is VeniceFamily {
   return (CATALOG_FAMILIES as readonly string[]).includes(value);
 }
 
-export function isUserConfigurableFamily(value: string): value is Exclude<VeniceFamily, "unknown"> {
+export function isUserConfigurableFamily(
+  value: string,
+): value is Exclude<VeniceFamily, "unknown"> {
   return (USER_CONFIGURABLE_FAMILIES as readonly string[]).includes(value);
 }
 
@@ -89,11 +91,15 @@ export function isDefaultableFamily(value: string): value is DefaultableFamily {
   return (DEFAULTABLE_FAMILIES as readonly string[]).includes(value);
 }
 
-export function isImplementedProviderFamily(value: VeniceFamily): value is ImplementedFamily {
+export function isImplementedProviderFamily(
+  value: VeniceFamily,
+): value is ImplementedFamily {
   return (IMPLEMENTED_PROVIDER_FAMILIES as readonly string[]).includes(value);
 }
 
-export function isImplementedToolFamily(value: VeniceFamily): value is ImplementedFamily {
+export function isImplementedToolFamily(
+  value: VeniceFamily,
+): value is ImplementedFamily {
   return (IMPLEMENTED_TOOL_FAMILIES as readonly string[]).includes(value);
 }
 
@@ -103,7 +109,9 @@ export function getEnabledToolFamilies(state: VeniceState): VeniceFamily[] {
   );
 }
 
-export function getEnabledButNotActionableFamilies(state: VeniceState): VeniceFamily[] {
+export function getEnabledButNotActionableFamilies(
+  state: VeniceState,
+): VeniceFamily[] {
   return state.config.enabledCatalogFamilies.filter(
     (family) =>
       !isImplementedToolFamily(family) && !isImplementedProviderFamily(family),
@@ -128,7 +136,8 @@ export function mimeFromExtension(
   fallback = "application/octet-stream",
 ): string {
   if (filePath.endsWith(".png")) return "image/png";
-  if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) return "image/jpeg";
+  if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg"))
+    return "image/jpeg";
   if (filePath.endsWith(".webp")) return "image/webp";
   if (filePath.endsWith(".gif")) return "image/gif";
   if (filePath.endsWith(".mp4")) return "video/mp4";
@@ -154,7 +163,10 @@ export function extensionFromMime(mimeType: string, fallback = ".bin"): string {
   return fallback;
 }
 
-export function parseDataUrl(value: string): { mimeType: string; base64: string } {
+export function parseDataUrl(value: string): {
+  mimeType: string;
+  base64: string;
+} {
   const match = value.match(/^data:([^;]+);base64,(.+)$/s);
   if (!match) {
     throw new Error("Invalid data URL input.");
@@ -165,7 +177,9 @@ export function parseDataUrl(value: string): { mimeType: string; base64: string 
   };
 }
 
-export function getCountsByFamily(models: VeniceModelInfo[]): Record<string, number> {
+export function getCountsByFamily(
+  models: VeniceModelInfo[],
+): Record<string, number> {
   const counts: Record<string, number> = {};
   for (const model of models) {
     counts[model.family] = (counts[model.family] || 0) + 1;
@@ -203,7 +217,9 @@ export function normalizeModel(raw: any): VeniceModelInfo {
         ? spec.maxCompletionTokens
         : undefined,
     pricing:
-      spec?.pricing && typeof spec.pricing === "object" ? spec.pricing : undefined,
+      spec?.pricing && typeof spec.pricing === "object"
+        ? spec.pricing
+        : undefined,
     constraints:
       spec?.constraints && typeof spec.constraints === "object"
         ? spec.constraints
@@ -265,7 +281,9 @@ export function pickDefaultModel(
   const configured = state.config.defaults[family];
   if (
     configured &&
-    state.models.some((model) => model.family === family && model.id === configured)
+    state.models.some(
+      (model) => model.family === family && model.id === configured,
+    )
   ) {
     return configured;
   }
@@ -333,20 +351,26 @@ export function renderToolSummary(
   theme: any,
 ): Text {
   const details = (result.details ?? {}) as VeniceToolDetails;
-  if (isPartial || details.status === "processing" || details.status === "queued") {
+  if (
+    isPartial ||
+    details.status === "processing" ||
+    details.status === "queued"
+  ) {
     let text = theme.fg("warning", `${title}: ${details.status || "working"}`);
     if (details.queueId) text += theme.fg("dim", ` · ${details.queueId}`);
     return new Text(text, 0, 0);
   }
 
   if (details.error || result.isError) {
-    const message = details.error || (result.content?.[0]?.text ?? "Request failed");
+    const message =
+      details.error || (result.content?.[0]?.text ?? "Request failed");
     return new Text(theme.fg("error", `${title}: ${message}`), 0, 0);
   }
 
   let text = theme.fg("success", details.summary || `${title}: done`);
   if (details.model) text += theme.fg("dim", ` · ${details.model}`);
-  if (details.quote !== undefined) text += theme.fg("dim", ` · quote $${details.quote}`);
+  if (details.quote !== undefined)
+    text += theme.fg("dim", ` · quote $${details.quote}`);
   if (details.queueId) text += theme.fg("dim", ` · ${details.queueId}`);
   text += renderSavedFiles(details.savedFiles, expanded, theme);
   return new Text(text, 0, 0);
@@ -360,8 +384,10 @@ export function buildModelListing(
   visionOnly = false,
 ): { text: string; count: number } {
   let filtered = models;
-  if (family !== "all") filtered = filtered.filter((model) => model.family === family);
-  if (reasoningOnly) filtered = filtered.filter((model) => model.supportsReasoning);
+  if (family !== "all")
+    filtered = filtered.filter((model) => model.family === family);
+  if (reasoningOnly)
+    filtered = filtered.filter((model) => model.supportsReasoning);
   if (visionOnly) filtered = filtered.filter((model) => model.supportsVision);
 
   filtered = [...filtered].sort((a, b) => {
@@ -391,7 +417,9 @@ export function buildModelListing(
     if (model.maxTokens) meta.push(`${model.maxTokens} out`);
     if (flags.length > 0) meta.push(flags.join(", "));
 
-    lines.push(`- ${model.id} — ${model.name}${meta.length ? ` (${meta.join(" · ")})` : ""}`);
+    lines.push(
+      `- ${model.id} — ${model.name}${meta.length ? ` (${meta.join(" · ")})` : ""}`,
+    );
   }
 
   if (total > limit) lines.push(`\n... ${total - limit} more model(s)`);
@@ -430,7 +458,7 @@ export function buildStatusSummary(state: VeniceState): string {
     `- implemented tool families: ${IMPLEMENTED_TOOL_FAMILIES.join(", ")}`,
     `- enabled but not actionable yet: ${notActionable.length ? notActionable.join(", ") : "none"}`,
     `- file storage adapter: ${state.config.storage.files.adapter}`,
-    `- file output root: ${state.config.storage.files.adapter === "local" ? state.config.storage.files.local.baseDir : state.config.storage.files.s3?.bucket ?? "unconfigured-s3"}`,
+    `- file output root: ${state.config.storage.files.adapter === "local" ? state.config.storage.files.local.baseDir : (state.config.storage.files.s3?.bucket ?? "unconfigured-s3")}`,
     `- defaults: ${defaults}`,
     `- model counts: ${countSummary || "none"}`,
     `- active video jobs: ${activeJobs}`,
@@ -445,7 +473,9 @@ export function updateStatus(ctx: ExtensionContext, state: VeniceState) {
   const activeJobs = Object.values(state.videoJobs).filter(
     (job) => job.status === "queued" || job.status === "processing",
   ).length;
-  const textCount = state.models.filter((model) => model.family === "text").length;
+  const textCount = state.models.filter(
+    (model) => model.family === "text",
+  ).length;
   const statusLabel =
     state.config.lastRefreshStatus === "ok"
       ? "online"
