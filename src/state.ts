@@ -13,12 +13,11 @@ import {
   isDefaultableFamily,
   isUserConfigurableFamily,
 } from "./helpers.ts";
-import { piConfigDir } from "./settings.ts";
+import { piAgentDir } from "./settings.ts";
 import type { DefaultableFamily, VeniceModelInfo, VeniceState } from "./types.ts";
 
 const MODEL_CACHE_PATH = join(
-  piConfigDir(),
-  "agent",
+  piAgentDir(),
   "venice-model-cache.json",
 );
 

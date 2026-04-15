@@ -64,8 +64,8 @@ The extension currently supports **API key authentication**.
 
 It looks for a Venice API key in either:
 
-- `VENICE_API_KEY`
-- `~/.pi/agent/auth.json`
+- env variables like `VENICE_API_KEY` (or custom one)
+- global pi config auth (`~/.config/pi/agent/auth.json` or `~/.pi/agent/auth.json`)
 
 Example `auth.json` using an environment variable name:
 

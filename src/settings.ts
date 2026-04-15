@@ -39,9 +39,36 @@ interface PiVeniceSettings {
   };
 }
 
-export function piConfigDir(): string {
+/**
+ * Better default resolving that Pi's internal `getAgetnDir`
+ *
+ * @returns correct pi agent dir with support for XDG
+ */
+export function piAgentDir(): string {
+  const agentDir = process.env.PI_CODING_AGENT_DIR;
+  if (agentDir && agentDir.length > 0) {
+    if (agentDir === "~") {
+      return homedir();
+    }
+
+    const hasTilde = agentDir.startsWith("~/");
+    if (hasTilde) {
+      return join(homedir(), agentDir.slice(1));
+    }
+
+    return agentDir;
+  }
+
   const xdg = process.env.XDG_CONFIG_HOME;
-  return join(xdg && xdg.length > 0 ? xdg : homedir(), ".pi");
+  if (xdg && xdg.length > 0) {
+    const piDir = join(xdg, "pi", "agent");
+    const hasDir = existsSync(piDir);
+    if (hasDir) {
+      return piDir;
+    }
+  }
+
+  return join(homedir(), ".pi", "agent");
 }
 
 function readJsonIfExists(path: string): any {
@@ -81,14 +108,19 @@ function expandHome(path: string): string {
   return path;
 }
 
-function resolveMaybeRelative(path: string | undefined, baseDir: string): string | undefined {
+function resolveMaybeRelative(
+  path: string | undefined,
+  baseDir: string,
+): string | undefined {
   if (!path) return undefined;
   const expanded = expandHome(path);
   if (expanded.startsWith("/")) return expanded;
   return resolve(baseDir, expanded);
 }
 
-export function resolveSecretReference(raw: string | undefined): string | undefined {
+export function resolveSecretReference(
+  raw: string | undefined,
+): string | undefined {
   if (!raw) return undefined;
   const trimmed = raw.trim();
   if (!trimmed) return undefined;
@@ -116,7 +148,10 @@ function normalizeScopedSettings(
         ...scoped.storage?.files,
         local: {
           ...scoped.storage?.files?.local,
-          baseDir: resolveMaybeRelative(scoped.storage?.files?.local?.baseDir, baseDir),
+          baseDir: resolveMaybeRelative(
+            scoped.storage?.files?.local?.baseDir,
+            baseDir,
+          ),
         },
       },
     },
@@ -124,7 +159,7 @@ function normalizeScopedSettings(
 }
 
 export function loadPiVeniceSettings(cwd: string): PiVeniceSettings {
-  const globalAgentDir = join(piConfigDir(), "agent");
+  const globalAgentDir = piAgentDir();
   const globalPath = join(globalAgentDir, "settings.json");
   const projectPath = resolve(cwd, ".pi", "settings.json");
 
@@ -141,15 +176,16 @@ export function loadPiVeniceSettings(cwd: string): PiVeniceSettings {
 }
 
 function loadGlobalOnlySettings(): PiVeniceSettings {
-  const globalAgentDir = join(piConfigDir(), "agent");
+  const globalAgentDir = piAgentDir();
   return normalizeScopedSettings(
-    (readJsonIfExists(join(globalAgentDir, "settings.json"))?.["pi-venice"] ?? {}) as PiVeniceSettings,
+    (readJsonIfExists(join(globalAgentDir, "settings.json"))?.["pi-venice"] ??
+      {}) as PiVeniceSettings,
     globalAgentDir,
   );
 }
 
 /** Apply global settings without requiring a project cwd.
- * Reads only <piConfigDir()>/agent/settings.json — does NOT consult project overrides. */
+ * Reads only <piAgentDir()>/settings.json — does NOT consult project overrides. */
 export function applySettingsToGlobalState(state: VeniceState): VeniceState {
   const merged = loadGlobalOnlySettings();
   const next: VeniceState = {
@@ -159,8 +195,11 @@ export function applySettingsToGlobalState(state: VeniceState): VeniceState {
       baseUrl: merged.baseUrl ?? state.config.baseUrl ?? VENICE_BASE_URL,
       apiKeyEnv: merged.apiKeyEnv ?? state.config.apiKeyEnv,
       enabledCatalogFamilies: Array.isArray(merged.families?.enabled)
-        ? merged.families.enabled.filter((family): family is VeniceState["config"]["enabledCatalogFamilies"][number] =>
-            isUserConfigurableFamily(family),
+        ? merged.families.enabled.filter(
+            (
+              family,
+            ): family is VeniceState["config"]["enabledCatalogFamilies"][number] =>
+              isUserConfigurableFamily(family),
           )
         : state.config.enabledCatalogFamilies,
       defaults: { ...state.config.defaults },
@@ -171,7 +210,8 @@ export function applySettingsToGlobalState(state: VeniceState): VeniceState {
       storage: {
         files: {
           adapter:
-            merged.storage?.files?.adapter ?? state.config.storage.files.adapter,
+            merged.storage?.files?.adapter ??
+            state.config.storage.files.adapter,
           local: {
             baseDir:
               merged.storage?.files?.local?.baseDir ??
@@ -180,17 +220,23 @@ export function applySettingsToGlobalState(state: VeniceState): VeniceState {
           s3: {
             ...state.config.storage.files.s3,
             endpoint:
-              merged.storage?.files?.s3?.endpoint ?? state.config.storage.files.s3?.endpoint,
+              merged.storage?.files?.s3?.endpoint ??
+              state.config.storage.files.s3?.endpoint,
             bucket:
-              merged.storage?.files?.s3?.bucket ?? state.config.storage.files.s3?.bucket,
+              merged.storage?.files?.s3?.bucket ??
+              state.config.storage.files.s3?.bucket,
             region:
-              merged.storage?.files?.s3?.region ?? state.config.storage.files.s3?.region,
+              merged.storage?.files?.s3?.region ??
+              state.config.storage.files.s3?.region,
             prefix:
-              merged.storage?.files?.s3?.prefix ?? state.config.storage.files.s3?.prefix,
+              merged.storage?.files?.s3?.prefix ??
+              state.config.storage.files.s3?.prefix,
             forcePathStyle:
-              merged.storage?.files?.s3?.forcePathStyle ?? state.config.storage.files.s3?.forcePathStyle,
+              merged.storage?.files?.s3?.forcePathStyle ??
+              state.config.storage.files.s3?.forcePathStyle,
             publicBaseUrl:
-              merged.storage?.files?.s3?.publicBaseUrl ?? state.config.storage.files.s3?.publicBaseUrl,
+              merged.storage?.files?.s3?.publicBaseUrl ??
+              state.config.storage.files.s3?.publicBaseUrl,
             credentials: {
               accessKeyId:
                 merged.storage?.files?.s3?.credentials?.accessKeyId ??
@@ -208,7 +254,10 @@ export function applySettingsToGlobalState(state: VeniceState): VeniceState {
     },
   };
 
-  if (Array.isArray(merged.families?.enabled) && next.config.enabledCatalogFamilies.length === 0) {
+  if (
+    Array.isArray(merged.families?.enabled) &&
+    next.config.enabledCatalogFamilies.length === 0
+  ) {
     next.config.enabledCatalogFamilies = [...USER_CONFIGURABLE_FAMILIES];
   }
 
@@ -222,7 +271,10 @@ export function applySettingsToGlobalState(state: VeniceState): VeniceState {
   return next;
 }
 
-export function applySettingsToState(state: VeniceState, cwd: string): VeniceState {
+export function applySettingsToState(
+  state: VeniceState,
+  cwd: string,
+): VeniceState {
   const merged = loadPiVeniceSettings(cwd);
   const next: VeniceState = {
     ...state,
@@ -231,8 +283,11 @@ export function applySettingsToState(state: VeniceState, cwd: string): VeniceSta
       baseUrl: merged.baseUrl ?? state.config.baseUrl ?? VENICE_BASE_URL,
       apiKeyEnv: merged.apiKeyEnv ?? state.config.apiKeyEnv,
       enabledCatalogFamilies: Array.isArray(merged.families?.enabled)
-        ? merged.families.enabled.filter((family): family is VeniceState["config"]["enabledCatalogFamilies"][number] =>
-            isUserConfigurableFamily(family),
+        ? merged.families.enabled.filter(
+            (
+              family,
+            ): family is VeniceState["config"]["enabledCatalogFamilies"][number] =>
+              isUserConfigurableFamily(family),
           )
         : state.config.enabledCatalogFamilies,
       defaults: { ...state.config.defaults },
@@ -243,7 +298,8 @@ export function applySettingsToState(state: VeniceState, cwd: string): VeniceSta
       storage: {
         files: {
           adapter:
-            merged.storage?.files?.adapter ?? state.config.storage.files.adapter,
+            merged.storage?.files?.adapter ??
+            state.config.storage.files.adapter,
           local: {
             baseDir:
               merged.storage?.files?.local?.baseDir ??
@@ -252,17 +308,23 @@ export function applySettingsToState(state: VeniceState, cwd: string): VeniceSta
           s3: {
             ...state.config.storage.files.s3,
             endpoint:
-              merged.storage?.files?.s3?.endpoint ?? state.config.storage.files.s3?.endpoint,
+              merged.storage?.files?.s3?.endpoint ??
+              state.config.storage.files.s3?.endpoint,
             bucket:
-              merged.storage?.files?.s3?.bucket ?? state.config.storage.files.s3?.bucket,
+              merged.storage?.files?.s3?.bucket ??
+              state.config.storage.files.s3?.bucket,
             region:
-              merged.storage?.files?.s3?.region ?? state.config.storage.files.s3?.region,
+              merged.storage?.files?.s3?.region ??
+              state.config.storage.files.s3?.region,
             prefix:
-              merged.storage?.files?.s3?.prefix ?? state.config.storage.files.s3?.prefix,
+              merged.storage?.files?.s3?.prefix ??
+              state.config.storage.files.s3?.prefix,
             forcePathStyle:
-              merged.storage?.files?.s3?.forcePathStyle ?? state.config.storage.files.s3?.forcePathStyle,
+              merged.storage?.files?.s3?.forcePathStyle ??
+              state.config.storage.files.s3?.forcePathStyle,
             publicBaseUrl:
-              merged.storage?.files?.s3?.publicBaseUrl ?? state.config.storage.files.s3?.publicBaseUrl,
+              merged.storage?.files?.s3?.publicBaseUrl ??
+              state.config.storage.files.s3?.publicBaseUrl,
             credentials: {
               accessKeyId:
                 merged.storage?.files?.s3?.credentials?.accessKeyId ??
@@ -280,7 +342,10 @@ export function applySettingsToState(state: VeniceState, cwd: string): VeniceSta
     },
   };
 
-  if (Array.isArray(merged.families?.enabled) && next.config.enabledCatalogFamilies.length === 0) {
+  if (
+    Array.isArray(merged.families?.enabled) &&
+    next.config.enabledCatalogFamilies.length === 0
+  ) {
     next.config.enabledCatalogFamilies = [...USER_CONFIGURABLE_FAMILIES];
   }
 
