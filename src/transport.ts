@@ -23,6 +23,7 @@ import {
   isVeniceE2EEPayload,
 } from "./e2ee.ts";
 import { stripLeakedEncryptedReasoningFromAssistantContent } from "./reasoning.ts";
+import { loadModelCache } from "./state.ts";
 
 const VENICE_CHAT_API = "venice-chat";
 
@@ -59,7 +60,9 @@ function asOpenAIModel(model: Model<any>): Model<"openai-completions"> {
 }
 
 function isE2EEModel(model: Model<any>): boolean {
-  return model.id.startsWith("e2ee-");
+  if (model.id.startsWith("e2ee-")) return true;
+  const cachedModel = loadModelCache()?.find((entry) => entry.id === model.id);
+  return Boolean(cachedModel?.supportsE2EE);
 }
 
 function hasToolHistory(context: Context): boolean {
@@ -289,7 +292,7 @@ function streamVeniceE2EE(
   (async () => {
     try {
       assertE2EESupportedContext(context, model);
-      const apiKey = options?.apiKey ?? process.env.VENICE_API_KEY;
+      const apiKey = options?.apiKey;
       if (!apiKey) throw new Error("No Venice API key found for E2EE request.");
 
       const attestation = await fetchAttestation(model, apiKey, options?.signal);
