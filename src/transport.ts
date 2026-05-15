@@ -297,22 +297,27 @@ async function streamSSE(
   const decoder = new TextDecoder();
   let buffered = "";
 
+  const flushEvent = (chunk: string) => {
+    const dataLines: string[] = [];
+    for (const line of chunk.split(/\r?\n/)) {
+      if (!line.startsWith("data:")) continue;
+      dataLines.push(line.slice(5).trimStart());
+    }
+    if (dataLines.length > 0) onData(dataLines.join("\n"));
+  };
+
   while (true) {
     const { done, value } = await reader.read();
     if (done) break;
     buffered += decoder.decode(value, { stream: true });
-    const lines = buffered.split(/\r?\n/);
-    buffered = lines.pop() ?? "";
-    for (const line of lines) {
-      if (!line.startsWith("data:")) continue;
-      onData(line.slice(5).trimStart());
-    }
+    const events = buffered.split(/\r?\n\r?\n/);
+    buffered = events.pop() ?? "";
+    for (const event of events) flushEvent(event);
   }
 
   buffered += decoder.decode();
-  for (const line of buffered.split(/\r?\n/)) {
-    if (line.startsWith("data:")) onData(line.slice(5).trimStart());
-  }
+  const tail = buffered.trim();
+  if (tail.length > 0) flushEvent(tail);
 }
 
 function streamVeniceE2EE(
