@@ -191,6 +191,17 @@ function mapFinishReason(value: string | null | undefined): StopReason {
   return "stop";
 }
 
+function decodeVeniceDelta(
+  value: unknown,
+  clientSessionPrivateKey: Uint8Array,
+): string | undefined {
+  if (typeof value !== "string" || value.length === 0) return undefined;
+  return isVeniceE2EEPayload(value)
+    ? decryptVeniceE2EEChunk(value, clientSessionPrivateKey)
+    : value;
+}
+
+
 function applyUsage(output: AssistantMessage, usage: any) {
   if (!usage || typeof usage !== "object") return;
   const input = Number(usage.prompt_tokens ?? 0);
@@ -200,6 +211,31 @@ function applyUsage(output: AssistantMessage, usage: any) {
   output.usage.totalTokens = Number(usage.total_tokens ?? input + completion);
 }
 
+function endCurrentContentBlock(
+  stream: ReturnType<typeof createAssistantMessageEventStream>,
+  output: AssistantMessage,
+) {
+  const block = output.content[output.content.length - 1];
+  if (!block) return;
+  if (block.type === "text") {
+    stream.push({
+      type: "text_end",
+      contentIndex: output.content.length - 1,
+      content: block.text,
+      partial: output,
+    });
+    return;
+  }
+  if (block.type === "thinking") {
+    stream.push({
+      type: "thinking_end",
+      contentIndex: output.content.length - 1,
+      content: block.thinking,
+      partial: output,
+    });
+  }
+}
+
 function pushTextDelta(
   stream: ReturnType<typeof createAssistantMessageEventStream>,
   output: AssistantMessage,
@@ -207,6 +243,7 @@ function pushTextDelta(
 ) {
   let block = output.content[output.content.length - 1];
   if (!block || block.type !== "text") {
+    endCurrentContentBlock(stream, output);
     block = { type: "text", text: "" };
     output.content.push(block);
     stream.push({
@@ -224,16 +261,29 @@ function pushTextDelta(
   });
 }
 
-function endTextBlock(
+function pushThinkingDelta(
   stream: ReturnType<typeof createAssistantMessageEventStream>,
   output: AssistantMessage,
+  delta: string,
+  signature: string,
 ) {
-  const block = output.content[output.content.length - 1];
-  if (block?.type !== "text") return;
+  let block = output.content[output.content.length - 1];
+  if (!block || block.type !== "thinking") {
+    endCurrentContentBlock(stream, output);
+    block = { type: "thinking", thinking: "", thinkingSignature: signature };
+    output.content.push(block);
+    stream.push({
+      type: "thinking_start",
+      contentIndex: output.content.length - 1,
+      partial: output,
+    });
+  }
+  block.thinking += delta;
+  if (!block.thinkingSignature) block.thinkingSignature = signature;
   stream.push({
-    type: "text_end",
+    type: "thinking_delta",
     contentIndex: output.content.length - 1,
-    content: block.text,
+    delta,
     partial: output,
   });
 }
@@ -336,19 +386,27 @@ function streamVeniceE2EE(
         const choice = Array.isArray(chunk.choices) ? chunk.choices[0] : undefined;
         if (!choice) return;
         if (choice.finish_reason) output.stopReason = mapFinishReason(choice.finish_reason);
-        const content = choice.delta?.content;
-        if (typeof content !== "string" || content.length === 0) return;
-        pushTextDelta(
-          stream,
-          output,
-          isVeniceE2EEPayload(content)
-            ? decryptVeniceE2EEChunk(content, clientSession.privateKey)
-            : content,
+        const content = decodeVeniceDelta(
+          choice.delta?.content,
+          clientSession.privateKey,
         );
+        if (content) {
+          pushTextDelta(stream, output, content);
+        }
+        const reasoningFields = ["reasoning_content", "reasoning", "reasoning_text"];
+        for (const field of reasoningFields) {
+          const reasoningDelta = decodeVeniceDelta(
+            choice.delta?.[field],
+            clientSession.privateKey,
+          );
+          if (!reasoningDelta) continue;
+          pushThinkingDelta(stream, output, reasoningDelta, field);
+          break;
+        }
       });
 
       if (options?.signal?.aborted) throw new Error("Request was aborted");
-      endTextBlock(stream, output);
+      endCurrentContentBlock(stream, output);
       stream.push({
         type: "done",
         reason: output.stopReason === "length" ? "length" : "stop",
