@@ -149,13 +149,18 @@ function textFromContent(content: unknown, role: string): string {
 
 // Only user and system messages are encrypted. Assistant messages are sent as
 // plaintext per the Venice E2EE protocol — E2EE encrypts prompts, not responses.
-function encryptMessagesForE2EE(messages: any[], attestedPublicKeyHex: string): any[] {
+function encryptMessagesForE2EE(
+  messages: any[],
+  clientSessionPrivateKey: Uint8Array,
+  attestedPublicKeyHex: string,
+): any[] {
   return messages.map((message) => {
     if (message.role !== "user" && message.role !== "system") return message;
     return {
       ...message,
       content: encryptForVeniceE2EE(
         textFromContent(message.content, message.role),
+        clientSessionPrivateKey,
         attestedPublicKeyHex,
       ),
     };
@@ -356,13 +361,15 @@ function streamVeniceE2EE(
       const attestation = await fetchAttestation(model, apiKey, options?.signal);
       const clientSession = generateVeniceE2EEKeypair();
       let payload = buildE2EEPayload(model, context, options);
-      payload.messages = encryptMessagesForE2EE(
-        payload.messages,
-        attestation.attestedPublicKeyHex,
-      );
-
       const nextPayload = await options?.onPayload?.(payload, model);
       if (nextPayload !== undefined) payload = nextPayload;
+
+      payload.stream = true;
+      payload.messages = encryptMessagesForE2EE(
+        payload.messages,
+        clientSession.privateKey,
+        attestation.attestedPublicKeyHex,
+      );
 
       const response = await fetch(veniceUrl(model, "/chat/completions"), {
         method: "POST",

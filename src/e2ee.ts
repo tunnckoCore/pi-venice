@@ -64,12 +64,12 @@ export function generateVeniceE2EEKeypair(): VeniceE2EEKeypair {
 
 export function encryptForVeniceE2EE(
   plaintext: string,
+  clientSessionPrivateKey: Uint8Array,
   attestedPublicKeyHex: string,
 ): string {
-  const requestKeypair = generateVeniceE2EEKeypair();
   return encryptWithKey(
     plaintext,
-    requestKeypair.privateKey,
+    clientSessionPrivateKey,
     normalizePublicKeyHex(attestedPublicKeyHex),
   );
 }
