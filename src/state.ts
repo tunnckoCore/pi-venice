@@ -1,9 +1,7 @@
 import type {
   ExtensionAPI,
   ExtensionContext,
-} from "@mariozechner/pi-coding-agent";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+} from "@earendil-works/pi-coding-agent";
 
 import {
   DEFAULTABLE_FAMILIES,
@@ -16,14 +14,7 @@ import {
   isDefaultableFamily,
   isUserConfigurableFamily,
 } from "./helpers.ts";
-import { piAgentDir } from "./settings.ts";
-import type {
-  DefaultableFamily,
-  VeniceModelInfo,
-  VeniceState,
-} from "./types.ts";
-
-const MODEL_CACHE_PATH = join(piAgentDir(), "venice-model-cache.json");
+import type { DefaultableFamily, VeniceState } from "./types.ts";
 
 export function defaultState(): VeniceState {
   return {
@@ -56,30 +47,6 @@ export function persistState(pi: ExtensionAPI, state: VeniceState) {
     models: state.models,
     videoJobs: state.videoJobs,
   });
-  persistModelCache(state);
-}
-
-export function persistModelCache(state: VeniceState) {
-  try {
-    writeFileSync(
-      MODEL_CACHE_PATH,
-      JSON.stringify({ models: state.models }),
-      "utf-8",
-    );
-  } catch {
-    // Silently ignore write failures - this is a best-effort cache
-  }
-}
-
-export function loadModelCache(): VeniceModelInfo[] | null {
-  try {
-    if (!existsSync(MODEL_CACHE_PATH)) return null;
-    const raw = JSON.parse(readFileSync(MODEL_CACHE_PATH, "utf-8"));
-    if (!Array.isArray(raw?.models)) return null;
-    return raw.models.map(coercePersistedModel);
-  } catch {
-    return null;
-  }
 }
 
 export function latestStateFromEntries(ctx: ExtensionContext): VeniceState {

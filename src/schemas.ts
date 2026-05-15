@@ -1,4 +1,3 @@
-import { StringEnum } from "@mariozechner/pi-ai";
 import { Type } from "@sinclair/typebox";
 
 import {
@@ -11,13 +10,26 @@ import {
   VIDEO_RESOLUTIONS,
 } from "./constants.ts";
 
-export const FamilySchema = StringEnum(FILTER_FAMILIES);
-export const ConfigurableFamilySchema = StringEnum(USER_CONFIGURABLE_FAMILIES);
-export const ImageFormatSchema = StringEnum(IMAGE_FORMATS);
-export const AspectRatioSchema = StringEnum(ASPECT_RATIOS);
-export const VideoDurationSchema = StringEnum(VIDEO_DURATIONS);
-export const VideoAspectSchema = StringEnum(VIDEO_ASPECTS);
-export const VideoResolutionSchema = StringEnum(VIDEO_RESOLUTIONS);
+function stringEnumSchema(values: readonly string[]) {
+  const [first, ...rest] = values;
+  if (first === undefined) {
+    throw new Error("stringEnumSchema requires at least one value");
+  }
+  return Type.Union([
+    Type.Literal(first),
+    ...rest.map((value) => Type.Literal(value)),
+  ]);
+}
+
+export const FamilySchema = stringEnumSchema(FILTER_FAMILIES);
+export const ConfigurableFamilySchema = stringEnumSchema(
+  USER_CONFIGURABLE_FAMILIES,
+);
+export const ImageFormatSchema = stringEnumSchema(IMAGE_FORMATS);
+export const AspectRatioSchema = stringEnumSchema(ASPECT_RATIOS);
+export const VideoDurationSchema = stringEnumSchema(VIDEO_DURATIONS);
+export const VideoAspectSchema = stringEnumSchema(VIDEO_ASPECTS);
+export const VideoResolutionSchema = stringEnumSchema(VIDEO_RESOLUTIONS);
 
 export const ListModelsParams = Type.Object({
   family: Type.Optional(FamilySchema),

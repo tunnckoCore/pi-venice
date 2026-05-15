@@ -29,6 +29,8 @@ export interface VeniceModelInfo {
   supportsReasoning?: boolean;
   supportsReasoningEffort?: boolean;
   supportsMultipleImages?: boolean;
+  supportsE2EE?: boolean;
+  supportsTeeAttestation?: boolean;
   optimizedForCode?: boolean;
 }
 

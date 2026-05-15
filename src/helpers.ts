@@ -1,5 +1,5 @@
-import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
+import { Text } from "@earendil-works/pi-tui";
 
 import {
   CATALOG_FAMILIES,
@@ -231,6 +231,8 @@ export function normalizeModel(raw: any): VeniceModelInfo {
     supportsReasoning: Boolean(capabilities?.supportsReasoning),
     supportsReasoningEffort: Boolean(capabilities?.supportsReasoningEffort),
     supportsMultipleImages: Boolean(capabilities?.supportsMultipleImages),
+    supportsE2EE: Boolean(capabilities?.supportsE2EE),
+    supportsTeeAttestation: Boolean(capabilities?.supportsTeeAttestation),
     optimizedForCode: Boolean(capabilities?.optimizedForCode),
   };
 }
@@ -270,6 +272,8 @@ export function coercePersistedModel(raw: any): VeniceModelInfo {
     supportsReasoning: Boolean(raw?.supportsReasoning),
     supportsReasoningEffort: Boolean(raw?.supportsReasoningEffort),
     supportsMultipleImages: Boolean(raw?.supportsMultipleImages),
+    supportsE2EE: Boolean(raw?.supportsE2EE),
+    supportsTeeAttestation: Boolean(raw?.supportsTeeAttestation),
     optimizedForCode: Boolean(raw?.optimizedForCode),
   };
 }
@@ -303,27 +307,35 @@ export function toProviderModels(state: VeniceState): any[] {
 
   return state.models
     .filter((model) => model.family === "text" && !model.offline)
-    .map((model) => ({
-      id: model.id,
-      name: model.name,
-      reasoning: Boolean(model.supportsReasoning),
-      input:
-        model.supportsVision || model.supportsMultipleImages
-          ? (["text", "image"] as const)
-          : (["text"] as const),
-      cost: {
-        input: costNumber(model.pricing?.input?.usd),
-        output: costNumber(model.pricing?.output?.usd),
-        cacheRead: costNumber(model.pricing?.cache_input?.usd),
-        cacheWrite: costNumber(model.pricing?.cache_write?.usd),
-      },
-      contextWindow: model.contextWindow ?? 32768,
-      maxTokens: model.maxTokens ?? 8192,
-      compat: {
-        supportsDeveloperRole: false,
-        supportsReasoningEffort: Boolean(model.supportsReasoningEffort),
-      },
-    }));
+    .map((model) => {
+      const supportsE2EE = Boolean(
+        model.supportsE2EE || model.id.startsWith("e2ee-"),
+      );
+
+      return {
+        id: model.id,
+        name: model.name,
+        reasoning: Boolean(model.supportsReasoning),
+        input:
+          !supportsE2EE &&
+          (model.supportsVision || model.supportsMultipleImages)
+            ? (["text", "image"] as const)
+            : (["text"] as const),
+        cost: {
+          input: costNumber(model.pricing?.input?.usd),
+          output: costNumber(model.pricing?.output?.usd),
+          cacheRead: costNumber(model.pricing?.cache_input?.usd),
+          cacheWrite: costNumber(model.pricing?.cache_write?.usd),
+        },
+        contextWindow: model.contextWindow ?? 32768,
+        maxTokens: model.maxTokens ?? 8192,
+        compat: {
+          supportsDeveloperRole: false,
+          supportsReasoningEffort: Boolean(model.supportsReasoningEffort),
+          supportsE2EE,
+        },
+      };
+    });
 }
 
 export function renderSavedFiles(
