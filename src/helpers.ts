@@ -231,6 +231,8 @@ export function normalizeModel(raw: any): VeniceModelInfo {
     supportsReasoning: Boolean(capabilities?.supportsReasoning),
     supportsReasoningEffort: Boolean(capabilities?.supportsReasoningEffort),
     supportsMultipleImages: Boolean(capabilities?.supportsMultipleImages),
+    supportsE2EE: Boolean(capabilities?.supportsE2EE),
+    supportsTeeAttestation: Boolean(capabilities?.supportsTeeAttestation),
     optimizedForCode: Boolean(capabilities?.optimizedForCode),
   };
 }
@@ -270,6 +272,8 @@ export function coercePersistedModel(raw: any): VeniceModelInfo {
     supportsReasoning: Boolean(raw?.supportsReasoning),
     supportsReasoningEffort: Boolean(raw?.supportsReasoningEffort),
     supportsMultipleImages: Boolean(raw?.supportsMultipleImages),
+    supportsE2EE: Boolean(raw?.supportsE2EE),
+    supportsTeeAttestation: Boolean(raw?.supportsTeeAttestation),
     optimizedForCode: Boolean(raw?.optimizedForCode),
   };
 }
@@ -308,7 +312,8 @@ export function toProviderModels(state: VeniceState): any[] {
       name: model.name,
       reasoning: Boolean(model.supportsReasoning),
       input:
-        model.supportsVision || model.supportsMultipleImages
+        !model.supportsE2EE &&
+        (model.supportsVision || model.supportsMultipleImages)
           ? (["text", "image"] as const)
           : (["text"] as const),
       cost: {

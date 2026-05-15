@@ -5,6 +5,7 @@ import type {
 
 import { refreshVeniceCatalog } from "./catalog.ts";
 import { toProviderModels, updateStatus } from "./helpers.ts";
+import { streamVenice, VENICE_CHAT_API } from "./transport.ts";
 import { VENICE_PROVIDER } from "./constants.ts";
 import {
   applySettingsToState,
@@ -106,7 +107,8 @@ export function createVeniceRuntime(pi: ExtensionAPI): VeniceRuntime {
         baseUrl: state.config.baseUrl,
         apiKey: state.config.apiKeyEnv,
         authHeader: true,
-        api: "openai-completions",
+        api: VENICE_CHAT_API,
+        streamSimple: streamVenice,
         models: toProviderModels(state),
       });
     },
