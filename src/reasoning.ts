@@ -1,10 +1,10 @@
 const ENCRYPTED_REASONING_TOKEN = "__ENCRYPTED_REASONING__";
-const ENCRYPTED_REASONING_LINE =
-  /(?:^|\n)[^\n]*__ENCRYPTED_REASONING__[^\n]*(?=\n|$)/g;
 
 function stripEncryptedReasoningLines(value: string): string {
   if (!value.includes(ENCRYPTED_REASONING_TOKEN)) return value;
-  return value.replace(ENCRYPTED_REASONING_LINE, "");
+  const lines = value.split("\n");
+  const kept = lines.filter((line) => !line.includes(ENCRYPTED_REASONING_TOKEN));
+  return kept.join("\n");
 }
 
 function stripAssistantContent(content: unknown): {
