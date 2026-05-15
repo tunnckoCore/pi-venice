@@ -8,11 +8,11 @@ import {
   type OpenAICompletionsCompat,
   type SimpleStreamOptions,
   type StopReason,
-} from "@mariozechner/pi-ai";
+} from "@earendil-works/pi-ai";
 import {
   convertMessages,
   streamSimpleOpenAICompletions,
-} from "@mariozechner/pi-ai/openai-completions";
+} from "@earendil-works/pi-ai/openai-completions";
 
 import { truncate } from "./helpers.ts";
 import {
@@ -30,17 +30,20 @@ const OPENAI_COMPAT: Required<OpenAICompletionsCompat> = {
   supportsStore: false,
   supportsDeveloperRole: false,
   supportsReasoningEffort: false,
-  reasoningEffortMap: {},
   supportsUsageInStreaming: true,
   maxTokensField: "max_completion_tokens",
   requiresToolResultName: false,
   requiresAssistantAfterToolResult: false,
   requiresThinkingAsText: false,
+  requiresReasoningContentOnAssistantMessages: false,
   thinkingFormat: "openai",
   openRouterRouting: {},
   vercelGatewayRouting: {},
   zaiToolStream: false,
   supportsStrictMode: true,
+  cacheControlFormat: "anthropic",
+  sendSessionAffinityHeaders: false,
+  supportsLongCacheRetention: true,
 };
 
 interface AttestationResult {
@@ -61,9 +64,10 @@ function asOpenAIModel(model: Model<any>): Model<"openai-completions"> {
   };
 }
 
-
 function isE2EEModel(model: Model<any>): boolean {
-  return model.id.startsWith("e2ee-") || Boolean((model.compat as any)?.supportsE2EE);
+  return (
+    model.id.startsWith("e2ee-") || Boolean((model.compat as any)?.supportsE2EE)
+  );
 }
 
 function hasToolHistory(context: Context): boolean {
@@ -77,17 +81,23 @@ function hasToolHistory(context: Context): boolean {
 
 function assertE2EESupportedContext(context: Context, model: Model<any>) {
   if (context.tools && context.tools.length > 0) {
-    throw new Error(`Venice E2EE model ${model.id} does not support tool calling.`);
+    throw new Error(
+      `Venice E2EE model ${model.id} does not support tool calling.`,
+    );
   }
   if (hasToolHistory(context)) {
-    throw new Error(`Venice E2EE model ${model.id} cannot continue a tool-call conversation.`);
+    throw new Error(
+      `Venice E2EE model ${model.id} cannot continue a tool-call conversation.`,
+    );
   }
 
   for (const message of context.messages) {
     if (message.role === "user" && Array.isArray(message.content)) {
       const hasImage = message.content.some((block) => block.type === "image");
       if (hasImage) {
-        throw new Error(`Venice E2EE model ${model.id} does not support image inputs.`);
+        throw new Error(
+          `Venice E2EE model ${model.id} does not support image inputs.`,
+        );
       }
     }
   }
@@ -100,7 +110,6 @@ function parseResponseError(response: Response): Promise<string> {
 function veniceUrl(model: Model<any>, path: string): string {
   return `${model.baseUrl.replace(/\/+$/, "")}${path}`;
 }
-
 
 async function fetchAttestation(
   model: Model<any>,
@@ -133,7 +142,9 @@ async function fetchAttestation(
 
   const publicKey = attestation?.signing_key ?? attestation?.signing_public_key;
   if (typeof publicKey !== "string") {
-    throw new Error("Venice E2EE attestation did not include an enclave public key.");
+    throw new Error(
+      "Venice E2EE attestation did not include an enclave public key.",
+    );
   }
 
   return { attestedPublicKeyHex: normalizeAttestedPublicKeyHex(publicKey) };
@@ -141,7 +152,10 @@ async function fetchAttestation(
 
 function textFromContent(content: unknown, role: string): string {
   if (typeof content === "string") return content;
-  if (Array.isArray(content) && content.every((part) => part?.type === "text")) {
+  if (
+    Array.isArray(content) &&
+    content.every((part) => part?.type === "text")
+  ) {
     return content.map((part) => part.text).join("");
   }
   throw new Error(`Venice E2EE only supports text ${role} message content.`);
@@ -185,7 +199,8 @@ function buildE2EEPayload(
   };
 
   if (options?.maxTokens) payload.max_completion_tokens = options.maxTokens;
-  if (options?.temperature !== undefined) payload.temperature = options.temperature;
+  if (options?.temperature !== undefined)
+    payload.temperature = options.temperature;
   if (options?.reasoning && model.reasoning && compat.supportsReasoningEffort) {
     payload.reasoning_effort = options.reasoning;
   }
@@ -208,7 +223,6 @@ function decodeVeniceDelta(
     ? decryptVeniceE2EEChunk(value, clientSessionPrivateKey)
     : value;
 }
-
 
 function applyUsage(output: AssistantMessage, usage: any) {
   if (!usage || typeof usage !== "object") return;
@@ -300,7 +314,8 @@ async function streamSSE(
   response: Response,
   onData: (data: string) => void,
 ): Promise<void> {
-  if (!response.body) throw new Error("Venice E2EE response did not include a body.");
+  if (!response.body)
+    throw new Error("Venice E2EE response did not include a body.");
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffered = "";
@@ -358,7 +373,11 @@ function streamVeniceE2EE(
       const apiKey = options?.apiKey;
       if (!apiKey) throw new Error("No Venice API key found for E2EE request.");
 
-      const attestation = await fetchAttestation(model, apiKey, options?.signal);
+      const attestation = await fetchAttestation(
+        model,
+        apiKey,
+        options?.signal,
+      );
       const clientSession = generateVeniceE2EEKeypair();
       let payload = buildE2EEPayload(model, context, options);
       const nextPayload = await options?.onPayload?.(payload, model);
@@ -398,9 +417,12 @@ function streamVeniceE2EE(
         const chunk = JSON.parse(data);
         output.responseId ||= chunk.id;
         if (chunk.usage) applyUsage(output, chunk.usage);
-        const choice = Array.isArray(chunk.choices) ? chunk.choices[0] : undefined;
+        const choice = Array.isArray(chunk.choices)
+          ? chunk.choices[0]
+          : undefined;
         if (!choice) return;
-        if (choice.finish_reason) output.stopReason = mapFinishReason(choice.finish_reason);
+        if (choice.finish_reason)
+          output.stopReason = mapFinishReason(choice.finish_reason);
         const content = decodeVeniceDelta(
           choice.delta?.content,
           clientSession.privateKey,
@@ -408,7 +430,11 @@ function streamVeniceE2EE(
         if (content) {
           pushTextDelta(stream, output, content);
         }
-        const reasoningFields = ["reasoning_content", "reasoning", "reasoning_text"];
+        const reasoningFields = [
+          "reasoning_content",
+          "reasoning",
+          "reasoning_text",
+        ];
         for (const field of reasoningFields) {
           const reasoningDelta = decodeVeniceDelta(
             choice.delta?.[field],
@@ -430,7 +456,8 @@ function streamVeniceE2EE(
       stream.end();
     } catch (error) {
       output.stopReason = options?.signal?.aborted ? "aborted" : "error";
-      output.errorMessage = error instanceof Error ? error.message : String(error);
+      output.errorMessage =
+        error instanceof Error ? error.message : String(error);
       stream.push({ type: "error", reason: output.stopReason, error: output });
       stream.end();
     }
@@ -449,7 +476,8 @@ export function streamVenice(
   return streamSimpleOpenAICompletions(asOpenAIModel(model), context, {
     ...options,
     onPayload: async (payload, payloadModel) => {
-      const stripped = stripLeakedEncryptedReasoningFromAssistantContent(payload);
+      const stripped =
+        stripLeakedEncryptedReasoningFromAssistantContent(payload);
       const nextPayload = await options?.onPayload?.(stripped, payloadModel);
       return nextPayload === undefined ? stripped : nextPayload;
     },

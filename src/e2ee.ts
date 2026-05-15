@@ -26,7 +26,10 @@ function normalizePublicKeyHex(value: string): string {
   return normalized.toLowerCase();
 }
 
-function deriveAesKey(privateKey: Uint8Array, publicKeyHex: string): Uint8Array {
+function deriveAesKey(
+  privateKey: Uint8Array,
+  publicKeyHex: string,
+): Uint8Array {
   const sharedSecret = secp256k1.getSharedSecret(
     privateKey,
     hexToBytes(normalizePublicKeyHex(publicKeyHex)),

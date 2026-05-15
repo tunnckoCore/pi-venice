@@ -3,7 +3,9 @@ const ENCRYPTED_REASONING_TOKEN = "__ENCRYPTED_REASONING__";
 function stripEncryptedReasoningLines(value: string): string {
   if (!value.includes(ENCRYPTED_REASONING_TOKEN)) return value;
   const lines = value.split("\n");
-  const kept = lines.filter((line) => !line.includes(ENCRYPTED_REASONING_TOKEN));
+  const kept = lines.filter(
+    (line) => !line.includes(ENCRYPTED_REASONING_TOKEN),
+  );
   return kept.join("\n");
 }
 

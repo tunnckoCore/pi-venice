@@ -1,5 +1,5 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { Text } from "@earendil-works/pi-tui";
 
 import { veniceFetch, veniceJson } from "../api.ts";
 import { resolveAsset } from "../assets.ts";
@@ -19,10 +19,7 @@ import { saveOutputBase64, saveOutputBuffer } from "../storage.ts";
 import type { SavedFile, VeniceToolDetails } from "../types.ts";
 import type { VeniceRuntime } from "../runtime.ts";
 
-function toolFamilyError(
-  runtime: VeniceRuntime,
-  family: "image" | "upscale",
-) {
+function toolFamilyError(runtime: VeniceRuntime, family: "image" | "upscale") {
   return ensureToolFamilyEnabled(runtime.getState(), family);
 }
 
@@ -209,8 +206,10 @@ export function registerVeniceImageTools(
         if (params.enhance_creativity !== undefined) {
           payload.enhanceCreativity = params.enhance_creativity;
         }
-        if (params.enhance_prompt) payload.enhancePrompt = params.enhance_prompt;
-        if (params.replication !== undefined) payload.replication = params.replication;
+        if (params.enhance_prompt)
+          payload.enhancePrompt = params.enhance_prompt;
+        if (params.replication !== undefined)
+          payload.replication = params.replication;
 
         const response = await veniceFetch(
           runtime.getState(),
@@ -240,7 +239,9 @@ export function registerVeniceImageTools(
         );
 
         return {
-          content: [{ type: "text", text: `Upscaled image saved to ${savedFile.path}` }],
+          content: [
+            { type: "text", text: `Upscaled image saved to ${savedFile.path}` },
+          ],
           details: {
             status: "done",
             family: "upscale",
@@ -251,7 +252,10 @@ export function registerVeniceImageTools(
       } catch (error: any) {
         return {
           content: [
-            { type: "text", text: `Image upscale failed: ${error?.message ?? String(error)}` },
+            {
+              type: "text",
+              text: `Image upscale failed: ${error?.message ?? String(error)}`,
+            },
           ],
           details: {
             status: "error",

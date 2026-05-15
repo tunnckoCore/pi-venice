@@ -1,7 +1,7 @@
 import type {
   ExtensionAPI,
   ExtensionContext,
-} from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
 
 import {
   DEFAULTABLE_FAMILIES,
@@ -14,10 +14,7 @@ import {
   isDefaultableFamily,
   isUserConfigurableFamily,
 } from "./helpers.ts";
-import type {
-  DefaultableFamily,
-  VeniceState,
-} from "./types.ts";
+import type { DefaultableFamily, VeniceState } from "./types.ts";
 
 export function defaultState(): VeniceState {
   return {

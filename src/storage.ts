@@ -1,7 +1,7 @@
 import { createHmac, createHash } from "node:crypto";
 import { URL } from "node:url";
 
-import type { ExtensionContext } from "@mariozechner/pi-coding-agent";
+import type { ExtensionContext } from "@earendil-works/pi-coding-agent";
 
 import {
   saveBase64File as saveLocalBase64File,

@@ -1,20 +1,14 @@
 import type {
   ExtensionAPI,
   ExtensionContext,
-} from "@mariozechner/pi-coding-agent";
+} from "@earendil-works/pi-coding-agent";
 
 import { refreshVeniceCatalog } from "./catalog.ts";
 import { toProviderModels, updateStatus } from "./helpers.ts";
 import { streamVenice, VENICE_CHAT_API } from "./transport.ts";
 import { VENICE_PROVIDER } from "./constants.ts";
-import {
-  applySettingsToState,
-} from "./settings.ts";
-import {
-  defaultState,
-  latestStateFromEntries,
-  persistState,
-} from "./state.ts";
+import { applySettingsToState } from "./settings.ts";
+import { defaultState, latestStateFromEntries, persistState } from "./state.ts";
 import type { VeniceState } from "./types.ts";
 import {
   completeVideoJob,
