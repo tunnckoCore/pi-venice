@@ -490,6 +490,126 @@ export function updateStatus(ctx: ExtensionContext, state: VeniceState) {
   );
 }
 
+const ENCRYPTED_REASONING_TOKEN = "__ENCRYPTED_REASONING__";
+const ENCRYPTED_REASONING_BLOCK =
+  /(?:^|\n)[^\n]*__ENCRYPTED_REASONING__[^\n]*(?=\n|$)/g;
+
+function stripEncryptedReasoning(value: string): string {
+  if (!value.includes(ENCRYPTED_REASONING_TOKEN)) return value;
+  return value.replace(ENCRYPTED_REASONING_BLOCK, "");
+}
+
+function isEncryptedReasoningObject(value: unknown): boolean {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as {
+    type?: unknown;
+    encrypted_content?: unknown;
+  };
+  return (
+    candidate.type === "reasoning.encrypted" ||
+    candidate.type === "encrypted_reasoning" ||
+    typeof candidate.encrypted_content === "string"
+  );
+}
+
+function sanitizeMessageContent(content: unknown): {
+  content: unknown;
+  changed: boolean;
+} {
+  if (typeof content === "string") {
+    const next = stripEncryptedReasoning(content);
+    return { content: next, changed: next !== content };
+  }
+
+  if (!Array.isArray(content)) return { content, changed: false };
+
+  let changed = false;
+  const next = [];
+  for (const part of content) {
+    if (isEncryptedReasoningObject(part)) {
+      changed = true;
+      continue;
+    }
+
+    if (
+      !part ||
+      typeof part !== "object" ||
+      (part as { type?: unknown }).type !== "text" ||
+      typeof (part as { text?: unknown }).text !== "string"
+    ) {
+      next.push(part);
+      continue;
+    }
+
+    const text = (part as { text: string }).text;
+    const stripped = stripEncryptedReasoning(text);
+    if (stripped === text) {
+      next.push(part);
+      continue;
+    }
+
+    changed = true;
+    next.push({ ...part, text: stripped });
+  }
+
+  return { content: next, changed };
+}
+
+function sanitizeProviderMessage(message: object): {
+  message: object;
+  changed: boolean;
+} {
+  let changed = false;
+  let next: object = message;
+
+  if ("content" in message) {
+    const { content, changed: contentChanged } = sanitizeMessageContent(
+      (message as { content?: unknown }).content,
+    );
+    if (contentChanged) {
+      changed = true;
+      next = { ...next, content };
+    }
+  }
+
+  const reasoningDetails = (message as { reasoning_details?: unknown })
+    .reasoning_details;
+  if (
+    Array.isArray(reasoningDetails) &&
+    reasoningDetails.some(isEncryptedReasoningObject)
+  ) {
+    changed = true;
+    const { reasoning_details: _reasoningDetails, ...withoutReasoning } =
+      next as { reasoning_details?: unknown };
+    next = withoutReasoning;
+  }
+
+  return { message: next, changed };
+}
+
+export function sanitizeVeniceProviderPayload(payload: unknown): unknown {
+  if (!payload || typeof payload !== "object") return payload;
+
+  const candidate = payload as { messages?: unknown };
+  if (!Array.isArray(candidate.messages)) return payload;
+
+  let changed = false;
+  const messages = candidate.messages.map((message) => {
+    if (!message || typeof message !== "object") return message;
+
+    const { message: next, changed: messageChanged } =
+      sanitizeProviderMessage(message);
+    if (!messageChanged) return message;
+
+    changed = true;
+    return next;
+  });
+
+  if (!changed) return payload;
+  return { ...payload, messages };
+}
+
 export function notify(
   ctx: ExtensionContext,
   message: string,

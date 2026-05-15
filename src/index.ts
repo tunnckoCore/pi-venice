@@ -2,7 +2,7 @@ import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
 
 // import { applyExtensionDefaults } from "../themeMap.ts";
 import { registerVeniceCommands } from "./commands.ts";
-import { notify } from "./helpers.ts";
+import { notify, sanitizeVeniceProviderPayload } from "./helpers.ts";
 import { createVeniceRuntime } from "./runtime.ts";
 import { registerVeniceTools } from "./tools/index.ts";
 
@@ -16,6 +16,20 @@ export default function (pi: ExtensionAPI) {
 
   registerVeniceCommands(pi, runtime);
   registerVeniceTools(pi, runtime);
+
+  pi.on("before_provider_request", (event) => {
+    const model =
+      event.payload &&
+      typeof event.payload === "object" &&
+      typeof (event.payload as { model?: unknown }).model === "string"
+        ? (event.payload as { model: string }).model
+        : undefined;
+    if (!model || !runtime.getState().models.some((entry) => entry.id === model)) {
+      return undefined;
+    }
+
+    return sanitizeVeniceProviderPayload(event.payload);
+  });
 
   const restoreAndUpdate = async (ctx: any) => {
     // applyExtensionDefaults(import.meta.url, ctx);
