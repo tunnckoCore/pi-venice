@@ -8,11 +8,7 @@ import { registerVeniceTools } from "./tools/index.ts";
 
 export default function (pi: ExtensionAPI) {
   const runtime = createVeniceRuntime(pi);
-
-  // Eagerly register provider with cached models during extension loading.
-  // This ensures Venice models are available when pi resolves its initial
-  // model scope, before the async session_start event fires.
-  runtime.eagerRegisterProvider();
+  runtime.registerProvider();
 
   registerVeniceCommands(pi, runtime);
   registerVeniceTools(pi, runtime);

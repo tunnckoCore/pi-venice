@@ -327,6 +327,7 @@ export function toProviderModels(state: VeniceState): any[] {
       compat: {
         supportsDeveloperRole: false,
         supportsReasoningEffort: Boolean(model.supportsReasoningEffort),
+        supportsE2EE: Boolean(model.supportsE2EE),
       },
     }));
 }

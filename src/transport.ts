@@ -16,14 +16,13 @@ import {
 
 import { truncate } from "./helpers.ts";
 import {
-  assertValidAttestedPublicKey,
+  normalizeAttestedPublicKeyHex,
   decryptVeniceE2EEChunk,
   encryptForVeniceE2EE,
   generateVeniceE2EEKeypair,
   isVeniceE2EEPayload,
 } from "./e2ee.ts";
 import { stripLeakedEncryptedReasoningFromAssistantContent } from "./reasoning.ts";
-import { loadModelCache } from "./state.ts";
 
 const VENICE_CHAT_API = "venice-chat";
 
@@ -48,6 +47,9 @@ interface AttestationResult {
   attestedPublicKeyHex: string;
 }
 
+// Bridges a custom-API model to openai-completions for delegation to the built-in
+// stream handler. Model<any> is unavoidable here — Pi's Model type ties compat
+// to the api type parameter, and we need to override both.
 function asOpenAIModel(model: Model<any>): Model<"openai-completions"> {
   return {
     ...model,
@@ -59,10 +61,9 @@ function asOpenAIModel(model: Model<any>): Model<"openai-completions"> {
   };
 }
 
+
 function isE2EEModel(model: Model<any>): boolean {
-  if (model.id.startsWith("e2ee-")) return true;
-  const cachedModel = loadModelCache()?.find((entry) => entry.id === model.id);
-  return Boolean(cachedModel?.supportsE2EE);
+  return model.id.startsWith("e2ee-") || Boolean((model.compat as any)?.supportsE2EE);
 }
 
 function hasToolHistory(context: Context): boolean {
@@ -135,7 +136,7 @@ async function fetchAttestation(
     throw new Error("Venice E2EE attestation did not include an enclave public key.");
   }
 
-  return { attestedPublicKeyHex: assertValidAttestedPublicKey(publicKey) };
+  return { attestedPublicKeyHex: normalizeAttestedPublicKeyHex(publicKey) };
 }
 
 function textFromContent(content: unknown, role: string): string {
@@ -146,6 +147,8 @@ function textFromContent(content: unknown, role: string): string {
   throw new Error(`Venice E2EE only supports text ${role} message content.`);
 }
 
+// Only user and system messages are encrypted. Assistant messages are sent as
+// plaintext per the Venice E2EE protocol — E2EE encrypts prompts, not responses.
 function encryptMessagesForE2EE(messages: any[], attestedPublicKeyHex: string): any[] {
   return messages.map((message) => {
     if (message.role !== "user" && message.role !== "system") return message;

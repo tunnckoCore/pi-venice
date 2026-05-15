@@ -78,6 +78,7 @@ export function isVeniceE2EEPayload(value: string): boolean {
   return (
     value.length >= MIN_ENCRYPTED_BYTES * 2 &&
     value.length % 2 === 0 &&
+    value.startsWith("04") &&
     /^[0-9a-fA-F]+$/.test(value)
   );
 }
@@ -98,6 +99,6 @@ export function decryptVeniceE2EEChunk(
   return new TextDecoder().decode(gcm(aesKey, nonce).decrypt(ciphertext));
 }
 
-export function assertValidAttestedPublicKey(value: string): string {
+export function normalizeAttestedPublicKeyHex(value: string): string {
   return normalizePublicKeyHex(value);
 }
